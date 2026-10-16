@@ -1,0 +1,8 @@
+# Game/account data and local development files do not belong in the addon.
+WTF/
+.env
+.env.*
+*.bak
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,36 @@
+## Interface: 120100, 38002, 20506, 11509, 50504,16001
+## Title: CardMaster |cff69ccf0卡牌大师|r
+## IconTexture: Interface\AddOns\CardMaster\Textures\Assets\CMLogo.png
+## Notes: Modular card animations for combat, loot, bosses, AFK and level-up events.
+## Notes-zhCN: 模块化卡牌动效：技能、战斗、暂离、首领、掉落与升级反馈。
+## Author: MangUI
+## Version: 1.0.166
+## SavedVariables: CardMasterDB, MangUICardMasterDB
+
+Core.lua
+Compatibility.lua
+WindowStack.lua
+CardCatalog.lua
+CardStyles.lua
+MoveCanvas.lua
+Modules\Integration.lua
+Modules\SpellTextures.lua
+Modules\SpellAliases.lua
+Modules\SingleSpell.lua
+Modules\CombatInAnimation.lua
+Modules\CombatIn.lua
+Modules\AFKTextures.lua
+Modules\AFK.lua
+Modules\Boss.lua
+Modules\LootTextures.lua
+Modules\Loot.lua
+Modules\LevelUpTextures.lua
+Modules\LevelUp.lua
+Modules\Countdown.lua
+Cards.lua
+ConfigShare.lua
+UIStyles.lua
+Options.lua
+Footer.lua
+Welcome.lua
+SettingsEntry.lua
