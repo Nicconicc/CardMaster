@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.0.167"
+Addon.buildVersion = "1.1.167"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
