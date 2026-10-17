@@ -1,7 +1,7 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "1.1.169"
+Addon.version = "1.1.170"
 Addon.eventFrame = CreateFrame("Frame")
 Addon.pendingItems = {}
 Addon.encounterActive = false

@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.169"
+Addon.buildVersion = "1.1.170"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -270,7 +270,7 @@ function Addon:CreateOptions()
         title:SetPoint("TOP", 0, -5)
     end
     -- V1.0 由作者手动维护；后缀三位序号随每次功能修改递增。
-    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 1922")
+    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 1941")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1189,9 +1189,15 @@ function Addon:BuildCollection()
     end
 
     local function updateClassTabs()
-        collectToggle:SetChecked(self:GetCollectionSettings(selectedStyleID).enabled)
+        local settings = self:GetCollectionSettings(selectedStyleID)
+        collectToggle:SetChecked(settings.enabled)
         for _, button in ipairs(classButtons) do
-            button.collectCheck:SetChecked(self:GetCollectionSettings(selectedStyleID).categories[button.classToken])
+            local check = button.collectCheck
+            check:SetChecked(settings.categories[button.classToken])
+            check:SetEnabled(settings.enabled)
+            -- Keep the saved choices, but render disabled checks in grey.
+            check:GetCheckedTexture():SetDesaturated(not settings.enabled)
+            check:GetCheckedTexture():SetVertexColor(1, 1, 1, 1)
             local active = button.classToken == selectedClass
             button:SetBackdropBorderColor(active and 1 or 0.4, active and 0.82 or 0.4, active and 0 or 0.4, active and 1 or 0.8)
             local collected, total = 0, 0
@@ -1304,11 +1310,19 @@ function Addon:BuildCollection()
         check:SetSize(20, 20)
         check:SetPoint("BOTTOMRIGHT", 5, -5)
         check:SetScript("OnClick", function(owner)
+            local settings = Addon:GetCollectionSettings(selectedStyleID)
+            if not settings.enabled then
+                owner:SetChecked(settings.categories[classToken])
+                return
+            end
             Addon:SetCollectionCategory(selectedStyleID, classToken, owner:GetChecked() and true or false)
         end)
         check:SetScript("OnEnter", function(owner)
             GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
             GameTooltip:SetText(text("加入收藏范围：", "Include category: ") .. text(classZh, classEn))
+            if not Addon:GetCollectionSettings(selectedStyleID).enabled then
+                GameTooltip:AddLine(text("请先勾选“开始收藏”。", "Enable Collect cards first."), 0.7, 0.7, 0.7)
+            end
             GameTooltip:Show()
         end)
         check:SetScript("OnLeave", GameTooltip_Hide)
