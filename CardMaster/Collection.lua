@@ -19,9 +19,11 @@ function Addon:CollectionText(zh, en)
     return self:CollectionChinese() and zh or en
 end
 
-function Addon:CollectionPrint(message)
+function Addon:CollectionPrint(message, reward)
     if DEFAULT_CHAT_FRAME then
-        DEFAULT_CHAT_FRAME:AddMessage("|cffffd100【" .. self:CollectionText("卡牌大师", "CardMaster") .. "】|r" .. message)
+        local prefix = reward and "|TInterface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png:20:20:0:0|t "
+            or "|cffffd100【" .. self:CollectionText("卡牌大师", "CardMaster") .. "】|r"
+        DEFAULT_CHAT_FRAME:AddMessage(prefix .. message)
     end
 end
 

@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.167"
+Addon.buildVersion = "1.1.168"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -270,7 +270,7 @@ function Addon:CreateOptions()
         title:SetPoint("TOP", 0, -5)
     end
     -- V1.0 由作者手动维护；后缀三位序号随每次功能修改递增。
-    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17")
+    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 1915")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1293,8 +1293,7 @@ function Addon:BuildCollection()
         button.progressDot = progressDot
         local check = CreateFrame("CheckButton", nil, button, "UICheckButtonTemplate")
         check:SetSize(20, 20)
-        check:SetPoint("BOTTOMRIGHT", 5, -5)
-        check:GetCheckedTexture():SetVertexColor(0.15, 1, 0.15)
+        check:SetPoint("BOTTOMRIGHT", 13, -13)
         check:SetScript("OnClick", function(owner)
             Addon:SetCollectionCategory(selectedStyleID, classToken, owner:GetChecked() and true or false)
         end)

@@ -1,6 +1,12 @@
 local _, Addon = ...
 local PREFIX = "CMCOL1"
 local peers, lastRequest, receiveTimes = {}, {}, {}
+local shareMessages, shareSerial = {}, 0
+local classColors = {
+    WARRIOR="c79c6e", PALADIN="f58cba", HUNTER="abd473", ROGUE="fff569",
+    PRIEST="ffffff", SHAMAN="0070de", MAGE="69ccf0", WARLOCK="9482c9",
+    DRUID="ff7d0a", DEATHKNIGHT="c41f3b", MONK="00ff96", DEMONHUNTER="a330c9", EVOKER="33937f",
+}
 local function safe(value)
     return not (issecretvalue and issecretvalue(value))
 end
@@ -27,26 +33,68 @@ function Addon:FormatCollectionNotice(notice, plain)
     local entry = notice.entry
     local name = self:GetCollectionDisplayName(entry)
     local card = "[" .. name .. "]"
-    if not plain then card = "|cff71d5ff|Hcmcard:" .. entry.id .. "|h" .. card .. "|h|r" end
+    local category = self:GetCollectionCategoryName(entry.category)
+    local progress = string.format("%d/%d", notice.have, notice.total)
+    local overall = string.format("%d/%d", notice.all, notice.maximum)
+    if not plain then
+        card = "|cff71d5ff|Hcmcard:" .. entry.id .. "|h" .. card .. "|h|r"
+        local color = classColors[entry.category] or "a335ee"
+        local class = classColors[entry.category] and RAID_CLASS_COLORS and RAID_CLASS_COLORS[entry.category]
+        if class then
+            color = string.format("%02x%02x%02x", math.floor(class.r * 255 + 0.5), math.floor(class.g * 255 + 0.5), math.floor(class.b * 255 + 0.5))
+        end
+        category = "|cff" .. color .. category .. "|r"
+        progress = self:ColorCollectionProgress(progress, notice.have, notice.total)
+        overall = self:ColorCollectionProgress(overall, notice.all, notice.maximum)
+    end
     return string.format(self:CollectionText(
-        "获得第%d套（%s）新收藏：%s！%s收藏进度：%d/%d，总体收藏进度：%d/%d。",
-        "New collection in set %d (%s): %s! %s: %d/%d; overall: %d/%d."),
-        entry.styleID, self:GetCardFrontStyle(entry.styleID).nameEn, card,
-        self:GetCollectionCategoryName(entry.category), notice.have, notice.total, notice.all, notice.maximum)
+        "获得第%d套卡牌新收藏：%s！%s收藏进度：%s，总体收藏进度：%s。",
+        "New card collected in set %d: %s! %s collection: %s; overall: %s."),
+        entry.styleID, card, category, progress, overall)
 end
 
-function Addon:SendCollectionEmote(text)
-    if not self.db.collectionBroadcast then return end
-    local sender = C_ChatInfo and C_ChatInfo.SendChatMessage or SendChatMessage
-    local ok, result
-    if sender then ok, result = pcall(sender, "【" .. self:CollectionText("卡牌大师", "CardMaster") .. "】" .. text, "EMOTE") end
-    -- Chat sending can require a hardware action on newer clients.
-    if not ok or result == false or (type(result) == "number" and result ~= 0) then
-        if not self.collectionSendWarning then
-            self.collectionSendWarning = true
-            self:CollectionPrint(self:CollectionText("当前客户端限制自动播报，本地收藏及提示正常。", "Automatic announcements are restricted; local collection is unaffected."))
-        end
+function Addon:ColorCollectionProgress(text, have, total)
+    local color = total > 0 and have >= total and "00ff00"
+        or (total > 0 and have / total >= 0.5 and "ffd114" or "eb2e29")
+    return "|cff" .. color .. text .. "|r"
+end
+
+function Addon:CreateCollectionShareLink(text)
+    if not self.db.collectionBroadcast then return "" end
+    -- Never send EMOTE from an event/timer. pcall cannot prevent the client's
+    -- ADDON_ACTION_BLOCKED event. Let the player submit through native chat.
+    local prefix = "【" .. self:CollectionText("卡牌大师", "CardMaster") .. "】"
+    local limit, links = 252 - #prefix, {} -- Reserve three bytes for "/e ".
+    while #text > 0 do
+        local count = math.min(#text, limit)
+        -- Do not split the UTF-8 character at the next chunk boundary.
+        while count > 0 and count < #text and text:byte(count + 1) >= 128 and text:byte(count + 1) < 192 do count = count - 1 end
+        if count == 0 then break end
+        shareSerial = shareSerial + 1
+        shareMessages[shareSerial] = prefix .. text:sub(1, count)
+        shareMessages[shareSerial - 64] = nil
+        text = text:sub(count + 1)
+        local label = self:CollectionText("通告", "Announce")
+        links[#links + 1] = "|cff80c0ff|Hcmshare:" .. shareSerial .. "|h[" .. label .. "]|h|r"
     end
+    return " " .. table.concat(links, " ")
+end
+
+function Addon:OpenCollectionShare(link, chatFrame)
+    local id = safe(link) and type(link) == "string" and link:match("^cmshare:(%d+)$")
+    if not id then return false end
+    local text = self.db.collectionBroadcast and shareMessages[tonumber(id)]
+    if not text then
+        self:CollectionPrint(self:CollectionText("通告链接已过期或播报已关闭。", "Announcement link expired or sharing is disabled."))
+        return true
+    end
+    local openChat = ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
+    if openChat then
+        openChat("/e " .. text, chatFrame or DEFAULT_CHAT_FRAME)
+    else
+        self:CollectionPrint(self:CollectionText("当前客户端无法打开通告输入框。", "This client cannot open the announcement input box."))
+    end
+    return true
 end
 
 function Addon:FlushCollectionNotices()
@@ -55,7 +103,6 @@ function Addon:FlushCollectionNotices()
     self.collectionNotices = {}
     local totals = {}
     for _, notice in ipairs(notices) do
-        self:CollectionPrint(self:FormatCollectionNotice(notice))
         local id = notice.entry.styleID
         totals[id] = (totals[id] or 0) + 1
     end
@@ -64,7 +111,6 @@ function Addon:FlushCollectionNotices()
         local sound = media and media:Fetch("sound", "Xylophone", true)
         PlaySoundFile(sound or "Interface\\AddOns\\CardMaster\\Audio\\Xylophone.wav", "Master")
     end
-    if #notices == 1 then self:SendCollectionEmote(self:FormatCollectionNotice(notices[1], true)); return end
     local segments = {}
     for _, style in ipairs(self:GetCardFrontStyles()) do
         if totals[style.id] then
@@ -73,16 +119,11 @@ function Addon:FlushCollectionNotices()
         end
     end
     local header = string.format(self:CollectionText("获得%d张新收藏！", "Collected %d new cards! "), #notices)
-    -- Keep UTF-8 intact by splitting only between complete set summaries.
-    local chunks, message = {}, header
-    for _, segment in ipairs(segments) do
-        if #message + #segment > 210 then chunks[#chunks + 1] = message; message = "" end
-        message = message .. segment .. self:CollectionText("；", "; ")
-    end
-    if message ~= "" then chunks[#chunks + 1] = message end
-    for i, chunk in ipairs(chunks) do
-        local content = chunk
-        C_Timer.After((i - 1) * 3, function() Addon:SendCollectionEmote(content) end)
+    local publicText = #notices == 1 and self:FormatCollectionNotice(notices[1], true)
+        or header .. table.concat(segments, self:CollectionText("；", "; "))
+    local share = self:CreateCollectionShareLink(publicText)
+    for i, notice in ipairs(notices) do
+        self:CollectionPrint(self:FormatCollectionNotice(notice) .. (i == #notices and share or ""), true)
     end
 end
 
@@ -155,50 +196,111 @@ function Addon:InitCollectionSocial()
     local register = C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix or RegisterAddonMessagePrefix
     if register then pcall(register, PREFIX) end
     local function entryFor(link)
-        if type(link) ~= "string" then return nil end
-        local id = link:match("^cmcard:(%d+:C%d+)$")
+        if not safe(link) or type(link) ~= "string" then return nil end
+        local id = link:match("^cmcard:(%d+:C%d+)$") or link:match("|Hcmcard:(%d+:C%d+)|h")
         return id and Addon.collectionIndex and Addon.collectionIndex[id]
+    end
+    local function enter(self, link)
+        local entry = entryFor(link)
+        if entry then
+            local preview = Addon.collectionPreview
+            if self.cardMasterCollectionHoverEntry == entry and preview and preview.entry == entry and preview:IsShown() then return end
+            self.cardMasterCollectionHoverEntry = entry
+            Addon:ShowCollectionPreview(entry, UIParent)
+        end
+    end
+    local function leave(self)
+        -- Some clients supply no link argument on OnHyperlinkLeave.
+        local entry = self.cardMasterCollectionHoverEntry
+        self.cardMasterCollectionHoverEntry = nil
+        local preview = Addon.collectionPreview
+        if entry and preview and preview.entry == entry and not preview.pinned then preview:Hide() end
     end
     local function installChat(chat)
         if not chat or not chat.HookScript then return end
         -- ScrollingMessageFrame can accept clicks while hover callbacks are
         -- disabled. Explicitly opt in on clients that expose this switch.
-        if chat.SetHyperlinksEnabled then chat:SetHyperlinksEnabled(true) end
+        if chat.SetHyperlinksEnabled and not (InCombatLockdown and InCombatLockdown()) then chat:SetHyperlinksEnabled(true) end
         if chat.cardMasterCollectionLinks then return end
         chat.cardMasterCollectionLinks = true
-        chat:HookScript("OnHyperlinkEnter", function(self, link)
-            local entry = entryFor(link)
-            if entry then
-                self.cardMasterCollectionHoverEntry = entry
-                Addon:ShowCollectionPreview(entry, UIParent)
-            end
-        end)
-        local function leave(self)
-            -- Some clients supply no link argument on OnHyperlinkLeave.
-            local entry = self.cardMasterCollectionHoverEntry
-            self.cardMasterCollectionHoverEntry = nil
-            local preview = Addon.collectionPreview
-            if entry and preview and preview.entry == entry and not preview.pinned then preview:Hide() end
-        end
+        chat:HookScript("OnHyperlinkEnter", enter)
         chat:HookScript("OnHyperlinkLeave", leave)
         chat:HookScript("OnHide", leave)
     end
-    local function install()
+    local install
+    local function installGlass()
+        local glass = _G.Glass
+        if not glass or not glass.GetModule then return end
+        -- Glass hides ChatFrameN and renders independent, pooled message lines.
+        -- Hook those actual lines, including ones created after this addon loads.
+        local manager = glass:GetModule("UIManager", true)
+        if manager then
+            if not manager.cardMasterCollectionAdapter and manager.OnEnable and hooksecurefunc then
+                manager.cardMasterCollectionAdapter = true
+                hooksecurefunc(manager, "OnEnable", function() install() end)
+            end
+            local function scan(smf)
+                for _, message in ipairs(smf.state and smf.state.messages or {}) do
+                    if not message.cardMasterCollectionLinks then installChat(message) end
+                end
+            end
+            for _, group in ipairs({"frames", "temporaryFrames"}) do
+                for _, smf in pairs(manager.state and manager.state[group] or {}) do
+                    scan(smf)
+                    if not smf.cardMasterCollectionAdapter and smf.Update and hooksecurefunc then
+                        smf.cardMasterCollectionAdapter = true
+                        hooksecurefunc(smf, "Update", function() scan(smf) end)
+                    end
+                end
+            end
+        end
+        if glass.Subscribe and not glass.cardMasterCollectionAdapter then
+            glass.cardMasterCollectionAdapter = true
+            local owner = {}
+            glass:Subscribe("Glass/HYPERLINK_ENTER", function(payload)
+                if type(payload) == "table" then enter(owner, payload[1]) end
+            end)
+            glass:Subscribe("Glass/HYPERLINK_LEAVE", function() leave(owner) end)
+            glass:Subscribe("Glass/MOUSE_LEAVE", function() leave(owner) end)
+        end
+    end
+    install = function()
         for i = 1, NUM_CHAT_WINDOWS or 10 do
             installChat(_G["ChatFrame" .. i])
         end
         installChat(DEFAULT_CHAT_FRAME)
         for _, name in ipairs(CHAT_FRAMES or {}) do installChat(_G[name]) end
+        installGlass()
     end
     install()
-    if FCF_OpenTemporaryWindow and hooksecurefunc then hooksecurefunc("FCF_OpenTemporaryWindow", install) end
-    if FCF_OpenNewWindow and hooksecurefunc then hooksecurefunc("FCF_OpenNewWindow", install) end
+    local function refresh()
+        install()
+        if C_Timer and C_Timer.After then C_Timer.After(0, install) end
+    end
+    if FCF_OpenTemporaryWindow and hooksecurefunc then hooksecurefunc("FCF_OpenTemporaryWindow", refresh) end
+    if FCF_OpenNewWindow and hooksecurefunc then hooksecurefunc("FCF_OpenNewWindow", refresh) end
+    if EventRegistry and EventRegistry.RegisterCallback then
+        local owner = {}
+        EventRegistry:RegisterCallback("ChatFrame.OnHyperlinkEnter", function(_, chat, link) enter(chat or owner, link) end, owner)
+        EventRegistry:RegisterCallback("ChatFrame.OnHyperlinkLeave", function(_, chat) leave(chat or owner) end, owner)
+    end
+    local adapter = CreateFrame("Frame")
+    adapter:RegisterEvent("ADDON_LOADED")
+    adapter:RegisterEvent("PLAYER_LOGIN")
+    adapter:RegisterEvent("PLAYER_ENTERING_WORLD")
+    adapter:RegisterEvent("UPDATE_CHAT_WINDOWS")
+    adapter:RegisterEvent("PLAYER_REGEN_ENABLED")
+    adapter:SetScript("OnEvent", function(_, event, name)
+        if event ~= "ADDON_LOADED" or name == "Glass" then refresh() end
+    end)
+    self.collectionChatAdapterFrame = adapter
     local original = SetItemRef
     if original then
-        SetItemRef = function(link, ...)
+        SetItemRef = function(link, text, button, chatFrame, ...)
+            if Addon:OpenCollectionShare(link, chatFrame) then return end
             local entry = entryFor(link)
             if entry then Addon:ShowCollectionPreview(entry, UIParent, true); return end
-            return original(link, ...)
+            return original(link, text, button, chatFrame, ...)
         end
     end
     if TooltipDataProcessor and Enum and Enum.TooltipDataType then
