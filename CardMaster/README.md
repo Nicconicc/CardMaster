@@ -27,6 +27,7 @@
 - 收藏存于账户 `SavedVariables/CardMasterCollection.lua`；设置存于 `SavedVariables/CardMaster.lua`
 - 分享 WTF 时排除 `CardMasterCollection.lua` 和 `.bak`，可保留主插件设置；恢复默认不清空收藏
 - 本地卡名悬浮／点击预览（兼容 Glass 消息行）、分通道扫光、Xylophone 音效
+- 六种来源的获卡通知在抽中后下一帧显示，战斗中同样提示；音效设 0.75 秒防重叠间隔，不延迟或丢弃文字通知
 
 ## 兼容说明
 

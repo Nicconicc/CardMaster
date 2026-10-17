@@ -62,7 +62,9 @@ function Addon:FlushCollectionNotices()
     local notices = self.collectionNotices or {}
     if #notices == 0 then return end
     self.collectionNotices = {}
-    if PlaySoundFile then
+    local now = GetTime()
+    if PlaySoundFile and (not self.collectionNoticeSoundAt or now - self.collectionNoticeSoundAt >= 0.75) then
+        self.collectionNoticeSoundAt = now
         local media = LibStub and LibStub("LibSharedMedia-3.0", true)
         local sound = media and media:Fetch("sound", "Xylophone", true)
         PlaySoundFile(sound or "Interface\\AddOns\\CardMaster\\Audio\\Xylophone.wav", "Master")

@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.170"
+Addon.buildVersion = "1.1.171"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -270,7 +270,7 @@ function Addon:CreateOptions()
         title:SetPoint("TOP", 0, -5)
     end
     -- V1.0 由作者手动维护；后缀三位序号随每次功能修改递增。
-    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 1941")
+    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 2100")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 

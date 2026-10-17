@@ -206,9 +206,10 @@ function Addon:CollectionAttempt(source, eventKey)
     self.collectionNotices[#self.collectionNotices + 1] = { entry = entry, have = have, total = total, all = all, maximum = maximum }
     if not self.collectionNoticeTimer then
         self.collectionNoticeTimer = true
-        C_Timer.After(3, function()
+        -- Batch only awards from this frame; local feedback is safe in combat.
+        C_Timer.After(0, function()
             Addon.collectionNoticeTimer = nil
-            if not (InCombatLockdown and InCombatLockdown()) then Addon:FlushCollectionNotices() end
+            Addon:FlushCollectionNotices()
         end)
     end
     if self.OnCollectionChanged then self:OnCollectionChanged() end

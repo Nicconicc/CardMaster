@@ -1,7 +1,7 @@
 ## Interface: 120100, 38002, 20506, 11509, 50504, 16001
 ## Title: CardMaster: Collection Storage
 ## Notes: Account-wide collection storage. Bundled with CardMaster.
-## Version: 1.1.170
+## Version: 1.1.171
 ## SavedVariables: CardMasterCollectionDB
 
 Storage.lua
