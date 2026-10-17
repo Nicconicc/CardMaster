@@ -157,25 +157,42 @@ function Addon:InitCollectionSocial()
     local function entryFor(link)
         if type(link) ~= "string" then return nil end
         local id = link:match("^cmcard:(%d+:C%d+)$")
-        return id and Addon.collectionIndex[id]
+        return id and Addon.collectionIndex and Addon.collectionIndex[id]
+    end
+    local function installChat(chat)
+        if not chat or not chat.HookScript then return end
+        -- ScrollingMessageFrame can accept clicks while hover callbacks are
+        -- disabled. Explicitly opt in on clients that expose this switch.
+        if chat.SetHyperlinksEnabled then chat:SetHyperlinksEnabled(true) end
+        if chat.cardMasterCollectionLinks then return end
+        chat.cardMasterCollectionLinks = true
+        chat:HookScript("OnHyperlinkEnter", function(self, link)
+            local entry = entryFor(link)
+            if entry then
+                self.cardMasterCollectionHoverEntry = entry
+                Addon:ShowCollectionPreview(entry, UIParent)
+            end
+        end)
+        local function leave(self)
+            -- Some clients supply no link argument on OnHyperlinkLeave.
+            local entry = self.cardMasterCollectionHoverEntry
+            self.cardMasterCollectionHoverEntry = nil
+            local preview = Addon.collectionPreview
+            if entry and preview and preview.entry == entry and not preview.pinned then preview:Hide() end
+        end
+        chat:HookScript("OnHyperlinkLeave", leave)
+        chat:HookScript("OnHide", leave)
     end
     local function install()
         for i = 1, NUM_CHAT_WINDOWS or 10 do
-            local chat = _G["ChatFrame" .. i]
-            if chat and not chat.cardMasterCollectionLinks then
-                chat.cardMasterCollectionLinks = true
-                chat:HookScript("OnHyperlinkEnter", function(_, link)
-                    local entry = entryFor(link)
-                    if entry then Addon:ShowCollectionPreview(entry, UIParent) end
-                end)
-                chat:HookScript("OnHyperlinkLeave", function(_, link)
-                    if entryFor(link) and Addon.collectionPreview and not Addon.collectionPreview.pinned then Addon.collectionPreview:Hide() end
-                end)
-            end
+            installChat(_G["ChatFrame" .. i])
         end
+        installChat(DEFAULT_CHAT_FRAME)
+        for _, name in ipairs(CHAT_FRAMES or {}) do installChat(_G[name]) end
     end
     install()
     if FCF_OpenTemporaryWindow and hooksecurefunc then hooksecurefunc("FCF_OpenTemporaryWindow", install) end
+    if FCF_OpenNewWindow and hooksecurefunc then hooksecurefunc("FCF_OpenNewWindow", install) end
     local original = SetItemRef
     if original then
         SetItemRef = function(link, ...)
