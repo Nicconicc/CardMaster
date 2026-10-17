@@ -12,6 +12,8 @@ local defaults = {
     hideWelcomeOnLogin = false,
     cardStyles = { front = 1, back = 1 },
     cardCollection = {},
+    collectionBroadcast = true,
+    collectionSettings = {},
     modules = {
         singleSpell = {
             enabled = true,
@@ -129,7 +131,9 @@ Addon.strings = {
         resizeHint = "拖住右下角调整窗口大小",
         openSettings = "左键点击打开设置",
         resetDone = "配置已恢复默认值。",
-        welcome = "欢迎使用卡牌大师，/cm或小地图按钮，选择不同卡牌皮肤，并对卡牌动画进行设置。",
+        welcome = "欢迎使用卡牌大师，/cm或小地图按钮，选择不同卡牌皮肤，并对卡牌动画进行设置，“卡牌总览”展示当前收藏进度。您的卡牌发现之旅正式开启，祝好运！",
+        collectionBroadcast = "其他玩家可见卡牌收集播报",
+        collectionResetHint = "将所有插件设置恢复为默认值，不会清空已获得的收藏卡牌及收藏进度。",
         firstRunTitle = "欢迎使用 CardMaster 卡牌大师",
         firstRunIntro = "选择喜欢的卡牌外观，之后可以随时更换。",
         firstRunFront = "选择正面样式",
@@ -214,7 +218,9 @@ Addon.strings = {
         resizeHint = "Drag to resize the window",
         openSettings = "Left-click to open settings",
         resetDone = "Settings restored to defaults.",
-        welcome = "Welcome to CardMaster. Use /cm or the minimap button to choose card skins and configure card animations.",
+        welcome = "Welcome to CardMaster! Use /cm or the minimap button to choose card skins and customize card animations. Check Card Overview to view your collection progress. Your card discovery journey begins—good luck!",
+        collectionBroadcast = "Share card collection announcements with other players",
+        collectionResetHint = "Restore all addon settings. Collected cards and collection progress will be preserved.",
         firstRunTitle = "Welcome to CardMaster",
         firstRunIntro = "Choose your card appearance. You can change it any time.",
         firstRunFront = "Choose a front style",
@@ -255,7 +261,9 @@ end
 
 function Addon:Print(message)
     local icon = "|TInterface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png:16:16:0:0|t"
-    DEFAULT_CHAT_FRAME:AddMessage("|cffffc34dMangUI|r " .. icon .. " " .. tostring(message))
+    local locale = GetLocale and GetLocale() or "enUS"
+    local name = (locale == "zhCN" or locale == "zhTW") and "卡牌大师" or "CardMaster"
+    DEFAULT_CHAT_FRAME:AddMessage("|cffffc34d" .. name .. "|r " .. icon .. " " .. tostring(message))
 end
 
 -- Select modern API restrictions for Retail and Forever. Forever now has its
@@ -296,6 +304,7 @@ function Addon:ApplyDatabase(database)
     replaceWithDefaults(self.db, database or defaults)
     copyDefaults(self.db, defaults)
     self:InitCardStyles()
+    if self.RefreshCollectionSettings then self:RefreshCollectionSettings() end
     self:InitIntegratedModules()
     self:InitAFKModule()
     self:InitBossModule()
@@ -351,9 +360,10 @@ function Addon:OnEvent(event, ...)
         CardMasterDB = copyDefaults(CardMasterDB, defaults)
         self.db = CardMasterDB
         if firstLoad then
-            if GetLocale and GetLocale() == "enUS" then self.db.language = "enUS" end
+            if GetLocale and GetLocale() ~= "zhCN" and GetLocale() ~= "zhTW" then self.db.language = "enUS" end
         end
         self:InitCardStyles()
+        self:InitCollection()
         self:InitIntegratedModules()
         self:InitAFKModule()
         self:InitBossModule()
@@ -397,6 +407,16 @@ function Addon:OnEvent(event, ...)
     elseif event == "PLAYER_LOGIN" then
         -- Retry if this client's native settings API was not ready at addon load.
         self:RegisterSettingsEntry()
+        if self.collectionStatus == "storage" or self.collectionStatus == "damaged" then
+            self:CollectionPrint(self:GetCollectionStatusText())
+        end
+        for _, style in ipairs(self:GetCardFrontStyles()) do
+            if not self:IsPackInstalled(style.id) then
+                self:CollectionPrint(style.nameEn .. self:CollectionText(" 资源包未加载；收藏数据保留，缺图使用占位显示。", " artwork pack is not loaded; collection is preserved and placeholders will be used."))
+            elseif CardMasterResourcePacks[style.id].version ~= 1 then
+                self:CollectionPrint(style.nameEn .. self:CollectionText(" 资源版本与主插件不一致，请检查更新。", " artwork version differs; check for updates."))
+            end
+        end
         if not self.db.hideWelcomeOnLogin then
             C_Timer.After(1.5, function()
                 if not Addon.db or Addon.db.hideWelcomeOnLogin then return end
@@ -410,7 +430,7 @@ function Addon:OnEvent(event, ...)
         -- Let other addons finish their login notices first so this welcome
         -- line appears at the end of the startup messages.
         C_Timer.After(5, function()
-            if Addon.db then Addon:Print(Addon:T("welcome")) end
+            if Addon.db then Addon:Print(Addon.strings[Addon:CollectionChinese() and "zhCN" or "enUS"].welcome) end
         end)
     elseif event == "PLAYER_REGEN_ENABLED" then
         self.eventFrame:UnregisterEvent("PLAYER_REGEN_ENABLED")

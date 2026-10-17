@@ -13,6 +13,8 @@ local function getSchema()
         language = Addon.defaults.language,
         showMinimapIcon = Addon.defaults.showMinimapIcon,
         hideWelcomeOnLogin = Addon.defaults.hideWelcomeOnLogin,
+        collectionBroadcast = Addon.defaults.collectionBroadcast,
+        collectionSettings = Addon:GetCollectionSettingsSchema(),
         cardStyles = Addon.defaults.cardStyles,
         modules = Addon.defaults.modules,
         integratedCards = integrated,
@@ -78,7 +80,8 @@ local function parse(data, position, depth)
             local key, value
             key, position = parse(data, position, depth + 1)
             value, position = parse(data, position, depth + 1)
-            if type(key) ~= "string" or result[key] ~= nil then error("invalid key") end
+            local validKey = type(key) == "string" or (type(key) == "number" and key >= 1 and key <= 1000 and key == math.floor(key))
+            if not validKey or result[key] ~= nil then error("invalid key") end
             result[key] = value
             count = count + 1
         end

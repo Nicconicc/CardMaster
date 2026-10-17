@@ -27,7 +27,6 @@ local logoFade, maskFade = 0, 0
 local testMode = false
 local FADE_DURATION = 1
 local isRetail = Addon:IsRetail()
-local SHINE_ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\cardfronthighlight\\cardfront"
 local SHINE_GRADIENT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\gradient.tga"
 
 if isRetail then
@@ -152,7 +151,7 @@ end
 
 local function RandomCatalogTexture(token)
     local style = Addon:GetSelectedCardFrontStyle()
-    if not style or not Addon.GetCardCollectionEntries then return nil end
+    if not style or not Addon.GetCardCollectionEntries or not Addon:IsPackInstalled(style.id) then return nil end
     local entries = Addon:GetCardCollectionEntries(style.id)[token] or {}
     if #entries == 0 then return nil end
     return entries[math.random(#entries)].sourceTexture
@@ -193,7 +192,7 @@ local function SetCardShineKind(card, kind)
     end
     local styleID = Addon:GetSelectedCardFrontStyle().id
     local suffix = styleID == 2 and kind == "special" and "_2" or ""
-    local root = SHINE_ROOT .. styleID .. "highlight"
+    local root = Addon:GetFrontHighlightRoot(styleID)
     if card.shineStyle ~= styleID or card.shineSuffix ~= suffix then
         card.shine.frame.mask:SetTexture(root .. "frame" .. suffix .. ".png")
         card.shine.card.mask:SetTexture(root .. "card" .. suffix .. ".png")

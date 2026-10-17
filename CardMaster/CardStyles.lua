@@ -1,8 +1,6 @@
 local _, Addon = ...
 
 local BACK_ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Cardback\\"
-local FRONT_ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Cardfront\\"
-local ASSET_ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\"
 local BACK_STYLE_COUNT = 19
 local backStyles
 local frontStyles = {
@@ -15,8 +13,8 @@ local frontStyles = {
             "暴风雪", "冰川尖刺", "猎豹形态", "怒雷破", "威力感知",
             "伪装", "悬空", "意气风发", "镇压", "自然平衡",
         },
-        nameZh = "正面样式 1",
-        nameEn = "Front style 1",
+        nameZh = "UuoBros",
+        nameEn = "UuoBros",
     },
     {
         id = 2,
@@ -31,8 +29,8 @@ local frontStyles = {
             "暴风雪", "冰川尖刺", "猎豹形态", "怒雷破", "威力感知",
             "伪装", "悬空", "意气风发", "镇压", "自然平衡",
         },
-        nameZh = "正面样式 2 HD高清",
-        nameEn = "Front style 2",
+        nameZh = "NerfLegacy",
+        nameEn = "NerfLegacy",
     },
 }
 
@@ -54,7 +52,8 @@ function Addon:GetSharedCardFrontShowNames()
 end
 
 function Addon:GetCardFrontShowTexture(style, name)
-    return ASSET_ROOT .. style.showFolder .. "\\" .. name .. ".blp"
+    if not self:IsPackInstalled(style.id) then return self:GetUnknownCardTexture(style.id) end
+    return self:GetPackRoot(style.id) .. "Textures\\Assets\\" .. style.showFolder .. "\\" .. name .. ".blp"
 end
 
 -- Choose one shared showcase card at login; each skin keeps its own art path.
@@ -112,8 +111,8 @@ end
 
 function Addon:ResolveCardFrontTexture(texture)
     local style = self:GetSelectedCardFrontStyle()
-    if not texture or not style or style.folder == "cardfront1" then return texture end
-    return texture:gsub("\\cardfront1\\", "\\" .. style.folder .. "\\", 1)
+    if style and not self:IsPackInstalled(style.id) then return self:GetCardBackTexture() end
+    return self:MapCardResourcePath(texture, style and style.id)
 end
 
 -- Countdown cards are authored separately from spell art.  Keep the artwork
@@ -124,7 +123,8 @@ function Addon:GetCountdownNumberTexture(number)
     if number < 1 or number > 10 then return nil end
     local style = self:GetSelectedCardFrontStyle()
     if not style then return nil end
-    return FRONT_ROOT .. style.folder .. "\\Numbers\\Num" .. number .. ".blp"
+    if not self:IsPackInstalled(style.id) then return self:GetCardBackTexture() end
+    return self:GetFrontArtPath(style.id, "Numbers\\Num" .. number .. ".blp")
 end
 
 -- The level-up animation has three authored card faces per front set.  Keep
@@ -133,7 +133,11 @@ end
 function Addon:GetLevelUpCardTextures()
     local style = self:GetSelectedCardFrontStyle()
     if not style then return nil end
-    local root = FRONT_ROOT .. style.folder .. "\\Level\\"
+    if not self:IsPackInstalled(style.id) then
+        local back = self:GetCardBackTexture()
+        return {leftCard = back, centerCard = back, rightCard = back}
+    end
+    local root = self:GetFrontArtPath(style.id, "Level\\")
     return {
         leftCard = root .. "牛头人升级.blp",
         centerCard = root .. "Level Up.blp",
@@ -180,7 +184,7 @@ end
 function Addon:IsCardCollected(styleID, classToken, spellName)
     local entries = self:GetCardCollectionEntries(styleID)[classToken] or {}
     for _, entry in ipairs(entries) do
-        if entry.name == spellName then return entry.available end
+        if entry.name == spellName then return self:OwnsCollectionCard(entry.id) end
     end
     return false
 end
@@ -188,7 +192,8 @@ end
 function Addon:GetUnknownCardTexture(styleID)
     local style = self:GetCardFrontStyle(styleID)
     if not style then return nil end
-    return FRONT_ROOT .. style.folder .. "\\cardunkown.blp"
+    if self:IsPackInstalled(styleID) then return self:GetFrontArtPath(styleID, "cardunkown.blp") end
+    return "Interface\\Icons\\INV_Misc_QuestionMark"
 end
 
 -- Catalogue names remain present even when their actual art is not installed.
@@ -206,11 +211,12 @@ function Addon:GetCardCollectionEntries(styleID)
             local sourceName = name
             local styleNames = class.styleFileNames and class.styleFileNames[styleID]
             if styleNames and styleNames[name] then sourceName = styleNames[name] end
-            local relativePath = catalog.folder .. "\\" .. classFolder .. "\\" .. sourceName .. ".blp"
             entries[#entries + 1] = {
                 styleID = styleID,
+                category = token,
+                id = self:GetStableCardID(styleID, token, name),
                 name = name,
-                sourceTexture = FRONT_ROOT .. relativePath,
+                sourceTexture = self:GetFrontArtPath(styleID, classFolder .. "\\" .. sourceName .. ".blp"),
                 available = false,
                 checked = false,
                 texture = self:GetUnknownCardTexture(styleID),
@@ -229,7 +235,7 @@ end
 -- SetSize(0, 0) after SetTexture asks the client for those native dimensions.
 function Addon:StartCardAssetScan()
     -- The overview may open before the login delay has elapsed. Do not let
-    -- that path bypass the same 20-second startup window.
+    -- that path bypass the same 10-second startup window.
     if not self.cardAssetScanReady or self.cardAssetScan then return end
     local scan = { queue = {}, active = {}, nextIndex = 1, running = true }
     self.cardAssetScan = scan
@@ -282,7 +288,7 @@ function Addon:StartCardAssetScan()
             started = started + 1
             local texture = frame:CreateTexture(nil, "ARTWORK")
             texture:SetPoint("TOPLEFT", frame, "TOPLEFT")
-            texture:SetTexture(entry.sourceTexture)
+            texture:SetTexture(self:IsPackInstalled(entry.styleID) and entry.sourceTexture or nil)
             texture:SetSize(0, 0)
             scan.active[#scan.active + 1] = { entry = entry, texture = texture, elapsed = 0 }
         end
@@ -304,16 +310,16 @@ end
 function Addon:GetCardCollectionProgress(styleID)
     local catalog = self:GetCardCollectionCatalog(styleID)
     if not catalog then return 0, 0 end
-    local collected, pending = 0, 0
+    local collected, total = 0, 0
     for _, entries in pairs(self:GetCardCollectionEntries(styleID)) do
         for _, entry in ipairs(entries) do
-            if entry.available then
+            total = total + 1
+            if self:OwnsCollectionCard(entry.id) then
                 collected = collected + 1
             end
-            if not entry.checked then pending = pending + 1 end
         end
     end
-    return collected, catalog.total, pending
+    return collected, total, 0
 end
 
 function Addon:InitCardStyles()

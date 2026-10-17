@@ -1,7 +1,6 @@
 local _, Addon = ...
 
 local ASSET_ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\"
-local SHINE_ROOT = ASSET_ROOT .. "cardfronthighlight\\cardfront"
 local WINDOW_WIDTH, WINDOW_HEIGHT = 960, 860
 local FRONT_ART_SIZE = 420
 
@@ -26,7 +25,7 @@ end
 local function AddFrontSweep(panel, button, art, styleID)
     if not button.CreateMaskTexture or not art.AddMaskTexture or not art.SetVertexOffset then return end
     local factor = FRONT_ART_SIZE / 512
-    local root = SHINE_ROOT .. styleID .. "highlight"
+    local root = Addon:GetFrontHighlightRoot(styleID)
     local effects = {}
     for _, channel in ipairs({
         { name = "frame", width = 180, alpha = styleID == 1 and 0.21 or 0.42 },
@@ -71,7 +70,7 @@ local function SetFrontSweepMode(panel, art, effects, styleID, special)
     local suffix = special and "_2" or ""
     for _, effect in ipairs(effects) do
         effect.animation:Stop()
-        effect.mask:SetTexture(SHINE_ROOT .. styleID .. "highlight" .. effect.name .. suffix .. ".png")
+        effect.mask:SetTexture(Addon:GetFrontHighlightRoot(styleID) .. effect.name .. suffix .. ".png")
         effect.band:ClearAllPoints()
         effect.band:SetPoint("CENTER", art, "CENTER", -430 * factor, 0)
         if panel:IsShown() then effect.animation:Play() end

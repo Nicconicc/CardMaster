@@ -36,7 +36,7 @@ function Animation.GetRandomClassDeck(count)
     local folder = GetSelectedFrontFolder()
     for spellName, texture in pairs(classCards) do
         -- Each card set keeps the same class/skill relative path.
-        texture = texture:gsub("\\cardfront1\\", "\\" .. folder .. "\\", 1)
+        texture = Addon:ResolveCardFrontTexture(texture)
         pool[#pool + 1] = { name = spellName, texture = texture }
     end
     for index = #pool, 2, -1 do

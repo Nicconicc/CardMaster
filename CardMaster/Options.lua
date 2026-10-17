@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.0.166"
+Addon.buildVersion = "1.0.167"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -270,7 +270,7 @@ function Addon:CreateOptions()
         title:SetPoint("TOP", 0, -5)
     end
     -- V1.0 由作者手动维护；后缀三位序号随每次功能修改递增。
-    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/16 1853")
+    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1069,7 +1069,22 @@ function Addon:BuildCollection()
     end
 
     local frontPanel = panel(self:T("frontStyle"), "LEFT")
-    local cardsPanel = panel(text("职业卡牌", "Class cards"), "RIGHT")
+    local cardsPanel = panel("", "RIGHT")
+    local collectToggle = CreateFrame("CheckButton", nil, cardsPanel, "UICheckButtonTemplate")
+    collectToggle:SetSize(24, 24)
+    collectToggle:SetPoint("TOPLEFT", 12, -8)
+    local collectLabel = collectToggle:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    self:SetControlFont(collectLabel)
+    collectLabel:SetPoint("LEFT", collectToggle, "RIGHT", 2, 0)
+    collectLabel:SetText(text("开始收藏（勾选下方图标选择收藏范围）", "Collect cards (check categories below)"))
+    collectToggle:SetScript("OnEnter", function(owner)
+        GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+        GameTooltip:SetText(text("开始收藏", "Collect cards"))
+        GameTooltip:AddLine(text("开启后，完成有效游玩活动有概率获得本套卡牌。勾选下方分类图标，将该分类尚未收藏的卡牌加入抽卡池；已收藏卡牌不会重复获得。概率固定，即卡牌总览中的所有勾选项的总和。", "Earn cards through eligible activities. Check categories to include their uncollected cards. All checked sets and categories share one fixed reward chance; duplicates are never awarded."), 1, 1, 1, true)
+        if Addon.collectionStatus ~= "ready" then GameTooltip:AddLine(Addon:GetCollectionStatusText(), 1, 0.5, 0, true) end
+        GameTooltip:Show()
+    end)
+    collectToggle:SetScript("OnLeave", GameTooltip_Hide)
 
     local frontScroll = CreateFrame("ScrollFrame", nil, frontPanel, "UIPanelScrollFrameTemplate")
     frontScroll:SetPoint("TOPLEFT", 10, -42)
@@ -1122,154 +1137,23 @@ function Addon:BuildCollection()
     local frontButtons, classButtons, previewCards = {}, {}, {}
     local rebuildCards, updateSelectedClassProgress
 
-    -- The full-resolution card art is deliberately an overlay: it keeps the
-    -- collection grid in place while giving the player a true 512x512 look at
-    -- the card currently under the cursor.
-    -- The preview belongs just outside the window's right edge, not over its
-    -- controls.  It remains fixed there when the collection panes are resized.
-    if self.collectionLargePreview then
-        self.collectionLargePreview:Hide()
-    end
-    local largePreview = CreateFrame("Frame", nil, self.options)
-    largePreview:SetSize(512, 512)
-    largePreview:SetPoint("TOPLEFT", self.options, "TOPRIGHT", -48, -78)
-    largePreview:SetFrameStrata("DIALOG")
-    largePreview.art = largePreview:CreateTexture(nil, "ARTWORK")
-    largePreview.art:SetSize(512, 512)
-    largePreview.art:SetPoint("CENTER")
-    largePreview:Hide()
+    local largePreview = self:GetCollectionPreview()
     self.collectionLargePreview = largePreview
-
-    -- Mirror the existing alpha gradient around its bright center. Skewing
-    -- the texture vertices makes one seamless, soft-edged diagonal beam.
-    local shineMask, shineBand, shineAnimation
-    local frameShineMask, frameShineBand, frameShineAnimation
-    local cardShineMask, cardShineBand, cardShineAnimation
-    if largePreview.CreateMaskTexture and largePreview.art.AddMaskTexture
-        and largePreview.art.SetVertexOffset then
-        shineMask = largePreview:CreateMaskTexture(nil, "OVERLAY")
-        shineMask:SetAllPoints(largePreview.art)
-        shineBand = largePreview:CreateTexture(nil, "OVERLAY")
-        shineBand:SetSize(360, 760)
-        shineBand:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\gradient.tga", "MIRROR")
-        shineBand:SetTexCoord(-1, 1, 0, 1)
-        shineBand:SetVertexColor(1, 0.94, 0.78, 0.42)
-        shineBand:SetBlendMode("ADD")
-        shineBand:SetVertexOffset(1, 130, 0)
-        shineBand:SetVertexOffset(3, 130, 0)
-        shineBand:SetVertexOffset(2, -130, 0)
-        shineBand:SetVertexOffset(4, -130, 0)
-        shineBand:AddMaskTexture(shineMask)
-        shineAnimation = shineBand:CreateAnimationGroup()
-        local sweep = shineAnimation:CreateAnimation("Translation")
-        sweep:SetOffset(860, 0)
-        sweep:SetDuration(2.1)
-        shineAnimation:SetScript("OnFinished", function() shineBand:Hide() end)
-        shineBand:Hide()
-
-        local function createChannelSweep(channelName, width, alpha)
-            local mask = largePreview:CreateMaskTexture(nil, "OVERLAY")
-            mask:SetAllPoints(largePreview.art)
-            mask:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\cardfronthighlight\\cardfront2highlight" .. channelName .. ".png")
-
-            local band = largePreview:CreateTexture(nil, "OVERLAY")
-            band:SetSize(width, 760)
-            band:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\gradient.tga", "MIRROR")
-            band:SetTexCoord(-1, 1, 0, 1)
-            band:SetVertexColor(1, 0.94, 0.78, alpha)
-            band:SetBlendMode("ADD")
-            band:SetVertexOffset(1, 130, 0)
-            band:SetVertexOffset(3, 130, 0)
-            band:SetVertexOffset(2, -130, 0)
-            band:SetVertexOffset(4, -130, 0)
-            band:AddMaskTexture(mask)
-
-            local animation = band:CreateAnimationGroup()
-            local sweep = animation:CreateAnimation("Translation")
-            sweep:SetOffset(860, 0)
-            sweep:SetDuration(2.1)
-            animation:SetScript("OnFinished", function() band:Hide() end)
-            band:Hide()
-            return mask, band, animation
-        end
-
-        -- Both front styles supply independent alpha channels for border and face.
-        frameShineMask, frameShineBand, frameShineAnimation = createChannelSweep("frame", 180, 0.42)
-        cardShineMask, cardShineBand, cardShineAnimation = createChannelSweep("card", 360, 0.105)
-
-    end
-    largePreview:SetScript("OnHide", function()
-        if shineAnimation then shineAnimation:Stop() end
-        if shineBand then shineBand:Hide() end
-        if frameShineAnimation then frameShineAnimation:Stop() end
-        if frameShineBand then frameShineBand:Hide() end
-        if cardShineAnimation then cardShineAnimation:Stop() end
-        if cardShineBand then cardShineBand:Hide() end
-        largePreview.entry = nil
-    end)
-
     local function showLargePreview(entry)
-        if not entry or not entry.available then
-            largePreview:Hide()
-            return
-        end
-        local playShine = largePreview.entry ~= entry or not largePreview:IsShown()
-        largePreview.entry = entry
-        largePreview.art:SetTexture(entry.texture)
-        largePreview.art:SetDesaturated(false)
-        largePreview.art:SetVertexColor(1, 1, 1, 1)
-        largePreview:Show()
-        if playShine then
-            local channelizedStyle = (selectedStyleID == 1 or selectedStyleID == 2)
-                and frameShineBand and cardShineBand
-            if channelizedStyle then
-                shineAnimation:Stop()
-                shineBand:Hide()
-                local frameAlpha = selectedStyleID == 1 and 0.21 or 0.42
-                local cardAlpha = selectedStyleID == 1 and 0.084 or 0.105
-                frameShineBand:SetVertexColor(1, 0.94, 0.78, frameAlpha)
-                cardShineBand:SetVertexColor(1, 0.94, 0.78, cardAlpha)
-                local channelSuffix = selectedStyleID == 2 and (selectedClass == "BOSS" or selectedClass == "LOOT") and "_2" or ""
-                local channelRoot = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\cardfronthighlight\\cardfront" .. selectedStyleID .. "highlight"
-                frameShineMask:SetTexture(channelRoot .. "frame" .. channelSuffix .. ".png")
-                cardShineMask:SetTexture(channelRoot .. "card" .. channelSuffix .. ".png")
-                for _, effect in ipairs({
-                    { band = frameShineBand, animation = frameShineAnimation },
-                    { band = cardShineBand, animation = cardShineAnimation },
-                }) do
-                    effect.animation:Stop()
-                    effect.band:Hide()
-                    effect.band:ClearAllPoints()
-                    effect.band:SetPoint("CENTER", largePreview.art, "CENTER", -430, 0)
-                    effect.band:Show()
-                    effect.animation:Play()
-                end
-            elseif shineBand then
-                if frameShineAnimation then frameShineAnimation:Stop(); frameShineBand:Hide() end
-                if cardShineAnimation then cardShineAnimation:Stop(); cardShineBand:Hide() end
-                shineAnimation:Stop()
-                shineMask:SetTexture(entry.texture)
-                shineBand:ClearAllPoints()
-                shineBand:SetPoint("CENTER", largePreview.art, "CENTER", -430, 0)
-                shineBand:Show()
-                shineAnimation:Play()
-            end
-        end
+        Addon:ShowCollectionPreview(entry, self.options)
     end
+    collectToggle:SetScript("OnClick", function(owner)
+        Addon:SetCollectionEnabled(selectedStyleID, owner:GetChecked() and true or false)
+    end)
 
     local function refreshCardArt(card)
         local entry = card.entry
-        if card.currentTexture ~= entry.texture then
-            card.art:SetTexture(entry.texture)
-            card.currentTexture = entry.texture
-        end
-        card.art:SetDesaturated(not entry.available)
-        if entry.available then
-            card.art:SetVertexColor(1, 1, 1, 1)
-        else
-            card.art:SetVertexColor(0.45, 0.45, 0.45, 0.7)
-        end
-        card.shade:SetShown(not entry.available)
+        local owned = self:OwnsCollectionCard(entry.id)
+        local texture = owned and entry.available and entry.sourceTexture or self:GetUnknownCardTexture(entry.styleID)
+        card.art:SetTexture(texture)
+        card.art:SetDesaturated(not owned)
+        card.art:SetVertexColor(1, 1, 1, 1)
+        card.shade:SetShown(not owned)
     end
 
     local function cardDisplayName(entry)
@@ -1302,13 +1186,15 @@ function Addon:BuildCollection()
     end
 
     local function updateClassTabs()
+        collectToggle:SetChecked(self:GetCollectionSettings(selectedStyleID).enabled)
         for _, button in ipairs(classButtons) do
+            button.collectCheck:SetChecked(self:GetCollectionSettings(selectedStyleID).categories[button.classToken])
             local active = button.classToken == selectedClass
             button:SetBackdropBorderColor(active and 1 or 0.4, active and 0.82 or 0.4, active and 0 or 0.4, active and 1 or 0.8)
             local collected, total = 0, 0
             for _, entry in ipairs(self:GetCardCollectionEntries(selectedStyleID)[button.classToken] or {}) do
                 total = total + 1
-                if entry.available then collected = collected + 1 end
+                if self:OwnsCollectionCard(entry.id) then collected = collected + 1 end
             end
             local percent = total > 0 and collected / total * 100 or 0
             if percent >= 100 then
@@ -1327,12 +1213,13 @@ function Addon:BuildCollection()
         local entries = self:GetCardCollectionEntries(selectedStyleID)[selectedClass] or {}
         local collected = 0
         for _, entry in ipairs(entries) do
-            if entry.available then collected = collected + 1 end
+            if self:OwnsCollectionCard(entry.id) then collected = collected + 1 end
         end
         local total = #entries
         local percent = total > 0 and collected / total * 100 or 0
         local percentText = percent == math.floor(percent) and string.format("%d%%", percent) or string.format("%.1f%%", percent)
-        classProgressText:SetText(string.format("%d/%d  %s", collected, total, percentText))
+        local status = self:GetCollectionStatusText()
+        classProgressText:SetText(status ~= "" and status or (total == 0 and text("暂无卡牌", "No cards") or string.format("%d/%d  %s", collected, total, percentText)))
     end
 
     rebuildCards = function()
@@ -1368,8 +1255,12 @@ function Addon:BuildCollection()
             label:SetText(cardDisplayName(entry))
             card:SetScript("OnEnter", function(owner)
                 GameTooltip_Hide()
-                if not owner.entry.available then
+                if not self:OwnsCollectionCard(owner.entry.id) or not owner.entry.available then
                     largePreview:Hide()
+                    GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+                    GameTooltip:SetText(cardDisplayName(owner.entry))
+                    GameTooltip:AddLine(text(self:OwnsCollectionCard(owner.entry.id) and "已收藏，贴图未安装" or "尚未收藏", self:OwnsCollectionCard(owner.entry.id) and "Collected; artwork not installed" or "Not collected"), 1, 1, 1)
+                    GameTooltip:Show()
                     return
                 end
                 showLargePreview(owner.entry)
@@ -1400,6 +1291,20 @@ function Addon:BuildCollection()
         progressDot:SetPoint("TOPLEFT", button, "TOPLEFT", -1, 1)
         progressDot:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\Circle.png")
         button.progressDot = progressDot
+        local check = CreateFrame("CheckButton", nil, button, "UICheckButtonTemplate")
+        check:SetSize(20, 20)
+        check:SetPoint("BOTTOMRIGHT", 5, -5)
+        check:GetCheckedTexture():SetVertexColor(0.15, 1, 0.15)
+        check:SetScript("OnClick", function(owner)
+            Addon:SetCollectionCategory(selectedStyleID, classToken, owner:GetChecked() and true or false)
+        end)
+        check:SetScript("OnEnter", function(owner)
+            GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+            GameTooltip:SetText(text("加入收藏范围：", "Include category: ") .. text(classZh, classEn))
+            GameTooltip:Show()
+        end)
+        check:SetScript("OnLeave", GameTooltip_Hide)
+        button.collectCheck = check
         button:SetScript("OnClick", function()
             selectedClass = classToken
             rebuildCards()
@@ -1511,12 +1416,15 @@ function Addon:BuildCollection()
         end
     end
     self.OnCardAssetsChanged = assetsChanged
+    self.OnCollectionChanged = assetsChanged
     host:SetScript("OnHide", function()
         if self.OnCardAssetsChanged == assetsChanged then self.OnCardAssetsChanged = nil end
+        if self.OnCollectionChanged == assetsChanged then self.OnCollectionChanged = nil end
         largePreview:Hide()
     end)
     host:SetScript("OnShow", function()
         self.OnCardAssetsChanged = assetsChanged
+    self.OnCollectionChanged = assetsChanged
         assetsChanged()
     end)
     host:SetScript("OnSizeChanged", layout)
@@ -1672,6 +1580,9 @@ function Addon:BuildMisc()
         Addon.db.showMinimapIcon = value
         Addon:UpdateMinimapButton()
     end, y)
+    y = self:CreateCheckbox(content, self:T("collectionBroadcast"), self.db.collectionBroadcast, function(value)
+        Addon.db.collectionBroadcast = value
+    end, y)
     finishSection(content, y)
 
     y = self:CreateSectionTitle(content, self:T("configShare"), y - 15)
@@ -1697,6 +1608,13 @@ function Addon:BuildMisc()
         }
         StaticPopup_Show("CARDMASTER_RESET_ALL")
     end)
+    reset:SetScript("OnEnter", function(owner)
+        GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
+        GameTooltip:SetText(Addon:T("resetAll"))
+        GameTooltip:AddLine(Addon:T("collectionResetHint"), 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    reset:SetScript("OnLeave", GameTooltip_Hide)
     reset:SetPoint("TOPLEFT", 416, y)
     self:StyleButton(reset, true)
     finishSection(content, y - 55)
