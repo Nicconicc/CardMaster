@@ -21,7 +21,7 @@ end
 
 function Addon:CollectionPrint(message, reward)
     if DEFAULT_CHAT_FRAME then
-        local prefix = reward and "|TInterface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png:20:20:0:0|t "
+        local prefix = reward and ("|TInterface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png:20:20:0:0|t |cffffd100" .. self:CollectionText("卡牌大师", "CardMaster") .. "|r ")
             or "|cffffd100【" .. self:CollectionText("卡牌大师", "CardMaster") .. "】|r"
         DEFAULT_CHAT_FRAME:AddMessage(prefix .. message)
     end

@@ -1,7 +1,6 @@
 local _, Addon = ...
 local PREFIX = "CMCOL1"
 local peers, lastRequest, receiveTimes = {}, {}, {}
-local shareMessages, shareSerial = {}, 0
 local classColors = {
     WARRIOR="c79c6e", PALADIN="f58cba", HUNTER="abd473", ROGUE="fff569",
     PRIEST="ffffff", SHAMAN="0070de", MAGE="69ccf0", WARLOCK="9482c9",
@@ -59,71 +58,19 @@ function Addon:ColorCollectionProgress(text, have, total)
     return "|cff" .. color .. text .. "|r"
 end
 
-function Addon:CreateCollectionShareLink(text)
-    if not self.db.collectionBroadcast then return "" end
-    -- Never send EMOTE from an event/timer. pcall cannot prevent the client's
-    -- ADDON_ACTION_BLOCKED event. Let the player submit through native chat.
-    local prefix = "【" .. self:CollectionText("卡牌大师", "CardMaster") .. "】"
-    local limit, links = 252 - #prefix, {} -- Reserve three bytes for "/e ".
-    while #text > 0 do
-        local count = math.min(#text, limit)
-        -- Do not split the UTF-8 character at the next chunk boundary.
-        while count > 0 and count < #text and text:byte(count + 1) >= 128 and text:byte(count + 1) < 192 do count = count - 1 end
-        if count == 0 then break end
-        shareSerial = shareSerial + 1
-        shareMessages[shareSerial] = prefix .. text:sub(1, count)
-        shareMessages[shareSerial - 64] = nil
-        text = text:sub(count + 1)
-        local label = self:CollectionText("通告", "Announce")
-        links[#links + 1] = "|cff80c0ff|Hcmshare:" .. shareSerial .. "|h[" .. label .. "]|h|r"
-    end
-    return " " .. table.concat(links, " ")
-end
-
-function Addon:OpenCollectionShare(link, chatFrame)
-    local id = safe(link) and type(link) == "string" and link:match("^cmshare:(%d+)$")
-    if not id then return false end
-    local text = self.db.collectionBroadcast and shareMessages[tonumber(id)]
-    if not text then
-        self:CollectionPrint(self:CollectionText("通告链接已过期或播报已关闭。", "Announcement link expired or sharing is disabled."))
-        return true
-    end
-    local openChat = ChatFrameUtil and ChatFrameUtil.OpenChat or ChatFrame_OpenChat
-    if openChat then
-        openChat("/e " .. text, chatFrame or DEFAULT_CHAT_FRAME)
-    else
-        self:CollectionPrint(self:CollectionText("当前客户端无法打开通告输入框。", "This client cannot open the announcement input box."))
-    end
-    return true
-end
-
 function Addon:FlushCollectionNotices()
     local notices = self.collectionNotices or {}
     if #notices == 0 then return end
     self.collectionNotices = {}
-    local totals = {}
-    for _, notice in ipairs(notices) do
-        local id = notice.entry.styleID
-        totals[id] = (totals[id] or 0) + 1
-    end
     if PlaySoundFile then
         local media = LibStub and LibStub("LibSharedMedia-3.0", true)
         local sound = media and media:Fetch("sound", "Xylophone", true)
         PlaySoundFile(sound or "Interface\\AddOns\\CardMaster\\Audio\\Xylophone.wav", "Master")
     end
-    local segments = {}
-    for _, style in ipairs(self:GetCardFrontStyles()) do
-        if totals[style.id] then
-            local have, total = self:GetCardCollectionProgress(style.id)
-            segments[#segments + 1] = string.format(self:CollectionText("%s 新增%d张，进度：%d/%d", "%s +%d, progress: %d/%d"), style.nameEn, totals[style.id], have, total)
-        end
-    end
-    local header = string.format(self:CollectionText("获得%d张新收藏！", "Collected %d new cards! "), #notices)
-    local publicText = #notices == 1 and self:FormatCollectionNotice(notices[1], true)
-        or header .. table.concat(segments, self:CollectionText("；", "; "))
-    local share = self:CreateCollectionShareLink(publicText)
-    for i, notice in ipairs(notices) do
-        self:CollectionPrint(self:FormatCollectionNotice(notice) .. (i == #notices and share or ""), true)
+    -- Local messages only: no automatic protected EMOTE send or share footer.
+    for _, notice in ipairs(notices) do
+        local hint = " |Hcmcard:" .. notice.entry.id .. "|h" .. self:CollectionText("点击文字可预览卡牌", "Click text to preview the card") .. "|h"
+        self:CollectionPrint(self:FormatCollectionNotice(notice) .. hint, true)
     end
 end
 
@@ -297,7 +244,11 @@ function Addon:InitCollectionSocial()
     local original = SetItemRef
     if original then
         SetItemRef = function(link, text, button, chatFrame, ...)
-            if Addon:OpenCollectionShare(link, chatFrame) then return end
+            -- Older chat-history entries can still contain the removed footer.
+            if safe(link) and type(link) == "string" and link:match("^cmshare:%d+$") then
+                Addon:CollectionPrint(Addon:CollectionText("通告入口已移除。", "The announcement shortcut has been removed."))
+                return
+            end
             local entry = entryFor(link)
             if entry then Addon:ShowCollectionPreview(entry, UIParent, true); return end
             return original(link, text, button, chatFrame, ...)

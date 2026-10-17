@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.168"
+Addon.buildVersion = "1.1.169"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -270,7 +270,7 @@ function Addon:CreateOptions()
         title:SetPoint("TOP", 0, -5)
     end
     -- V1.0 由作者手动维护；后缀三位序号随每次功能修改递增。
-    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 1915")
+    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 1922")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1149,11 +1149,14 @@ function Addon:BuildCollection()
     local function refreshCardArt(card)
         local entry = card.entry
         local owned = self:OwnsCollectionCard(entry.id)
-        local texture = owned and entry.available and entry.sourceTexture or self:GetUnknownCardTexture(entry.styleID)
+        local available = entry.available and self:IsPackInstalled(entry.styleID)
+        local revealed = owned or (card.collectionPreviewHovered == true and available)
+        local texture = revealed and available and entry.sourceTexture or self:GetUnknownCardTexture(entry.styleID)
         card.art:SetTexture(texture)
-        card.art:SetDesaturated(not owned)
+        card.art:SetDesaturated(not revealed)
         card.art:SetVertexColor(1, 1, 1, 1)
-        card.shade:SetShown(not owned)
+        card.shade:SetShown(not revealed)
+        return available
     end
 
     local function cardDisplayName(entry)
@@ -1254,21 +1257,27 @@ function Addon:BuildCollection()
             label:SetJustifyH("CENTER")
             label:SetText(cardDisplayName(entry))
             card:SetScript("OnEnter", function(owner)
+                owner.collectionPreviewHovered = true
                 GameTooltip_Hide()
-                if not self:OwnsCollectionCard(owner.entry.id) or not owner.entry.available then
+                if not refreshCardArt(owner) then
                     largePreview:Hide()
                     GameTooltip:SetOwner(owner, "ANCHOR_RIGHT")
                     GameTooltip:SetText(cardDisplayName(owner.entry))
-                    GameTooltip:AddLine(text(self:OwnsCollectionCard(owner.entry.id) and "已收藏，贴图未安装" or "尚未收藏", self:OwnsCollectionCard(owner.entry.id) and "Collected; artwork not installed" or "Not collected"), 1, 1, 1)
+                    GameTooltip:AddLine(text("贴图未安装或仍在检查", "Artwork missing or still being checked"), 1, 1, 1)
                     GameTooltip:Show()
                     return
                 end
                 showLargePreview(owner.entry)
             end)
-            card:SetScript("OnLeave", function()
-                largePreview:Hide()
+            local function restoreCard(owner)
+                if owner.collectionPreviewHovered ~= true then return end
+                owner.collectionPreviewHovered = nil
+                refreshCardArt(owner)
+                if largePreview.entry == owner.entry and largePreview.previewOwner == self.options and not largePreview.pinned then largePreview:Hide() end
                 GameTooltip_Hide()
-            end)
+            end
+            card:SetScript("OnLeave", restoreCard)
+            card:SetScript("OnHide", restoreCard)
         end
         cardContent:SetHeight(math.max(1, math.ceil(#entries / columns) * 150))
         updateClassTabs()
@@ -1293,7 +1302,7 @@ function Addon:BuildCollection()
         button.progressDot = progressDot
         local check = CreateFrame("CheckButton", nil, button, "UICheckButtonTemplate")
         check:SetSize(20, 20)
-        check:SetPoint("BOTTOMRIGHT", 13, -13)
+        check:SetPoint("BOTTOMRIGHT", 5, -5)
         check:SetScript("OnClick", function(owner)
             Addon:SetCollectionCategory(selectedStyleID, classToken, owner:GetChecked() and true or false)
         end)
@@ -1409,8 +1418,15 @@ function Addon:BuildCollection()
         updateFrontProgress()
         updateClassTabs()
         updateSelectedClassProgress()
-        for _, card in ipairs(previewCards) do refreshCardArt(card) end
-        if largePreview:IsShown() and largePreview.entry then
+        local hoveredEntry
+        for _, card in ipairs(previewCards) do
+            local available = refreshCardArt(card)
+            if card.collectionPreviewHovered == true and available then hoveredEntry = card.entry end
+        end
+        if hoveredEntry then
+            GameTooltip_Hide()
+            showLargePreview(hoveredEntry)
+        elseif largePreview:IsShown() and largePreview.entry then
             showLargePreview(largePreview.entry)
         end
     end
