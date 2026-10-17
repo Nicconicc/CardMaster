@@ -47,7 +47,8 @@ function Addon:CollectionKill(guid, confirmedGroupKill)
     end
     if type(guid) ~= "string" or not guid:match("^Creature%-") then return end
     local info = units[guid]
-    local npc = tonumber(select(6, strsplit("-", guid)))
+    local npcText = select(6, strsplit("-", guid))
+    local npc = tonumber(npcText)
     if confirmedGroupKill or (info and info.involved) then self:CollectionLegacyFinal(npc) end
     if not info or not info.eligible or GetTime() - info.at > 180 then return end
     if not confirmedGroupKill and not info.involved then return end
