@@ -1,7 +1,7 @@
 local _, Addon = ...
 local roots = {
-    [1] = "Interface\\AddOns\\CardMaster_UuoBros\\",
-    [2] = "Interface\\AddOns\\CardMaster_NerfCoop\\",
+    [1] = "Interface\\AddOns\\CardMaster_HallowedForgeSeries\\",
+    [2] = "Interface\\AddOns\\CardMaster_LustreSeries\\",
 }
 function Addon:GetPackRoot(id)
     local pack = CardMasterResourcePacks and CardMasterResourcePacks[id]

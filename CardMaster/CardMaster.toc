@@ -4,8 +4,8 @@
 ## Notes: Modular card animations for combat, loot, bosses, AFK and level-up events.
 ## Notes-zhCN: 模块化卡牌动效：技能、战斗、暂离、首领、掉落与升级反馈。
 ## Author: MangUI
-## Version: 1.1.175
-## OptionalDeps: CardMasterCollection, CardMaster_UuoBros, CardMaster_NerfCoop
+## Version: 1.1.176
+## OptionalDeps: CardMasterCollection, CardMaster_HallowedForgeSeries, CardMaster_LustreSeries
 ## SavedVariables: CardMasterDB, MangUICardMasterDB
 
 Core.lua

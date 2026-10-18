@@ -13,8 +13,8 @@ local frontStyles = {
             "暴风雪", "冰川尖刺", "猎豹形态", "怒雷破", "威力感知",
             "伪装", "悬空", "意气风发", "镇压", "自然平衡",
         },
-        nameZh = "UuoBros",
-        nameEn = "UuoBros",
+        nameZh = "I 圣铸系列",
+        nameEn = "I Hallowed Forge Series",
     },
     {
         id = 2,
@@ -29,8 +29,8 @@ local frontStyles = {
             "暴风雪", "冰川尖刺", "猎豹形态", "怒雷破", "威力感知",
             "伪装", "悬空", "意气风发", "镇压", "自然平衡",
         },
-        nameZh = "NerfLegacy",
-        nameEn = "NerfLegacy",
+        nameZh = "II 流光系列",
+        nameEn = "II Lustre Series",
     },
 }
 

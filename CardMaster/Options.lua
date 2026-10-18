@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.175"
+Addon.buildVersion = "1.1.176"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -269,7 +269,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0140")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0215")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -983,9 +983,14 @@ function Addon:BuildStyles()
         button.art:ClearAllPoints()
         button.art:SetPoint("TOP", 0, -8)
         button.label:ClearAllPoints()
-        button.label:SetPoint("TOPLEFT", button.art, "BOTTOMLEFT", -10, -4)
-        button.label:SetPoint("TOPRIGHT", button.art, "BOTTOMRIGHT", 10, -4)
+        button.label:SetPoint("TOP", button, "TOP", 0, -162)
+        button.label:SetWidth(200)
         button.label:SetFontObject(GameFontHighlight)
+        button.label:SetWordWrap(true)
+        button.label:SetNonSpaceWrap(true)
+        button.label:SetJustifyV("TOP")
+        button.label:SetHeight(0)
+        button:SetHeight(math.max(190, 174 + math.ceil(button.label:GetStringHeight())))
         button.styleID = id
         frontButtons[#frontButtons + 1] = button
     end
@@ -1026,11 +1031,13 @@ function Addon:BuildStyles()
         backPanel:SetWidth(backWidth)
         local frontAvailable = math.max(220, frontPanel:GetWidth() - 40)
         frontContent:SetWidth(frontAvailable)
+        local frontOffset = 0
         for index, button in ipairs(frontButtons) do
             button:ClearAllPoints()
-            button:SetPoint("TOPLEFT", math.max(0, (frontAvailable - 220) / 2), -(index - 1) * 204)
+            button:SetPoint("TOPLEFT", math.max(0, (frontAvailable - 220) / 2), -frontOffset)
+            frontOffset = frontOffset + button:GetHeight() + 14
         end
-        frontContent:SetHeight(math.max(1, #frontButtons * 204))
+        frontContent:SetHeight(math.max(1, frontOffset))
         local available = math.max(140, backWidth - 40)
         local columns = math.max(1, math.floor((available + 12) / 152))
         backContent:SetWidth(available)
@@ -1353,10 +1360,15 @@ function Addon:BuildCollection()
         -- Use the same font setup as the front-style labels in BuildStyles.
         self:SetControlFont(label)
         label:SetFontObject(GameFontHighlight)
-        label:SetPoint("TOPLEFT", art, "BOTTOMLEFT", -10, -4)
-        label:SetPoint("TOPRIGHT", art, "BOTTOMRIGHT", 10, -4)
+        label:SetPoint("TOP", button, "TOP", 0, -162)
+        label:SetWidth(200)
         label:SetJustifyH("CENTER")
+        label:SetJustifyV("TOP")
+        label:SetWordWrap(true)
+        label:SetNonSpaceWrap(true)
         label:SetText(text(styleNameZh, styleNameEn))
+        label:SetHeight(0)
+        button:SetHeight(math.max(262, 238 + math.ceil(label:GetStringHeight())))
         local progressFrame = CreateFrame("Frame", nil, button, "BackdropTemplate")
         progressFrame:SetSize(190, 11)
         progressFrame:SetPoint("TOP", label, "BOTTOM", 0, -13)
@@ -1402,11 +1414,13 @@ function Addon:BuildCollection()
         cardsPanel:SetWidth(cardsWidth)
         local frontAvailable = math.max(220, frontPanel:GetWidth() - 40)
         frontContent:SetWidth(frontAvailable)
+        local frontOffset = 0
         for index, button in ipairs(frontButtons) do
             button:ClearAllPoints()
-            button:SetPoint("TOPLEFT", math.max(0, (frontAvailable - 220) / 2), -(index - 1) * 276)
+            button:SetPoint("TOPLEFT", math.max(0, (frontAvailable - 220) / 2), -frontOffset)
+            frontOffset = frontOffset + button:GetHeight() + 14
         end
-        frontContent:SetHeight(math.max(1, #frontButtons * 276))
+        frontContent:SetHeight(math.max(1, frontOffset))
         local firstRowCount = math.min(13, #classButtons)
         local secondRowCount = math.max(0, #classButtons - firstRowCount)
         local tabWidth = firstRowCount * 38 - 4
@@ -1667,7 +1681,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0140")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0215")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))

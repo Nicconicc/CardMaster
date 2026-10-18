@@ -22,7 +22,7 @@ Complete your favorite class first, focus on boss cards, or work toward both com
 
 ## Watch Your Collection Grow
 
-- **Two independent collections:** Track UuoBros and NerfLegacy separately.
+- **Two independent collections:** Track I Hallowed Forge Series and II Lustre Series separately.
 - **Choose what to collect:** Select the sets and categories you want to pursue.
 - **Detailed progress:** View completion progress for individual categories and entire card sets.
 - **Instant reward notifications:** Receive a local message and sound when you collect a new card.
@@ -44,7 +44,7 @@ The two sets offer different visual styles and their own collection goals. More 
 
 *A gallery of cards inspired by adventures across Azeroth.*
 
-![UuoBros and NerfLegacy card fronts alongside a selection of card backs](docs/screenshots/card-styles.png)
+![I Hallowed Forge Series and II Lustre Series card fronts alongside a selection of card backs](docs/screenshots/card-styles.png)
 
 *Choose your card-front style and card back.*
 

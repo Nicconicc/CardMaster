@@ -1,7 +1,7 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "1.1.175"
+Addon.version = "1.1.176"
 Addon.eventFrame = CreateFrame("Frame")
 Addon.pendingItems = {}
 Addon.encounterActive = false
@@ -412,9 +412,9 @@ function Addon:OnEvent(event, ...)
         end
         for _, style in ipairs(self:GetCardFrontStyles()) do
             if not self:IsPackInstalled(style.id) then
-                self:CollectionPrint(style.nameEn .. self:CollectionText(" 资源包未加载；收藏数据保留，缺图使用占位显示。", " artwork pack is not loaded; collection is preserved and placeholders will be used."))
+                self:CollectionPrint(self:CollectionText(style.nameZh, style.nameEn) .. self:CollectionText(" 资源包未加载；收藏数据保留，缺图使用占位显示。", " artwork pack is not loaded; collection is preserved and placeholders will be used."))
             elseif CardMasterResourcePacks[style.id].version ~= 1 then
-                self:CollectionPrint(style.nameEn .. self:CollectionText(" 资源版本与主插件不一致，请检查更新。", " artwork version differs; check for updates."))
+                self:CollectionPrint(self:CollectionText(style.nameZh, style.nameEn) .. self:CollectionText(" 资源版本与主插件不一致，请检查更新。", " artwork version differs; check for updates."))
             end
         end
         if not self.db.hideWelcomeOnLogin then

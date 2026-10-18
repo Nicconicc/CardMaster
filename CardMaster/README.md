@@ -4,9 +4,9 @@
 
 ## 安装
 
-1. 将安装包中的 `CardMaster`、`CardMasterCollection`、`CardMaster_UuoBros`、`CardMaster_NerfCoop` 四个文件夹一起放入对应客户端的 `Interface/AddOns/`。
-2. 首次由旧版升级后完全退出并重启游戏，使客户端发现三个新增模块；这次升级不能只用 `/reload`。
-3. 启用四个模块。UuoBros 为第一套，NerfLegacy 为第二套（目录为 `CardMaster_NerfCoop`）。
+1. 将安装包中的 `CardMaster`、`CardMasterCollection`、`CardMaster_HallowedForgeSeries`、`CardMaster_LustreSeries` 四个文件夹一起放入对应客户端的 `Interface/AddOns/`。
+2. 由旧版本升级时替换旧资源包目录，完全退出并重启游戏，使客户端发现更名后的模块；这次升级不能只用 `/reload`。
+3. 启用四个模块。第一套为 I Hallowed Forge Series（I 圣铸系列），第二套为 II Lustre Series（II 流光系列）。更名不改变套牌编号和收藏进度。
 
 输入 `/cm` 打开设置，`/cm reset` 恢复全部默认，`/cm welcome` 打开欢迎窗口。
 也可以通过小地图按钮或“设置 → 插件 → CardMaster”进入。

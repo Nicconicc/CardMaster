@@ -46,10 +46,12 @@ function Addon:FormatCollectionNotice(notice, plain)
         progress = self:ColorCollectionProgress(progress, notice.have, notice.total)
         overall = self:ColorCollectionProgress(overall, notice.all, notice.maximum)
     end
+    local style = self:GetCardFrontStyle(entry.styleID)
+    local series = self:CollectionText(style.nameZh, style.nameEn)
     return string.format(self:CollectionText(
-        "获得第%d套卡牌新收藏：%s！%s收藏进度：%s，总体收藏进度：%s。",
-        "New card collected in set %d: %s! %s collection: %s; overall: %s."),
-        entry.styleID, card, category, progress, overall)
+        "获得%s新收藏：%s！%s收藏进度：%s，总体收藏进度：%s。",
+        "New card collected in %s: %s! %s collection: %s; overall: %s."),
+        series, card, category, progress, overall)
 end
 
 function Addon:ColorCollectionProgress(text, have, total)
@@ -116,7 +118,7 @@ function Addon:CollectionReceive(prefix, message, distribution, sender)
     for part in body:gmatch("[^|]+") do
         local id, have, total = part:match("^(%d+),(%d+),(%d+)$")
         id, have, total = tonumber(id), tonumber(have), tonumber(total)
-        if not id or not have or not total or have > total or total > 100000 or not self.CardCatalog[id] then return end
+        if not id or not have or not total or have > total or total > 100000 or not self:GetCardCollectionCatalog(id) then return end
         data.sets[id] = {have, total}
     end
     peers[sender] = data
@@ -135,7 +137,7 @@ function Addon:CollectionTooltip(tooltip, unit)
     tooltip:AddLine(self:CollectionText("卡牌大师收藏", "CardMaster collection"), 1, 0.82, 0)
     for _, style in ipairs(self:GetCardFrontStyles()) do
         local progress = peer.sets[style.id]
-        if progress then tooltip:AddLine(string.format("%s: %d/%d (%.1f%%)", style.nameEn, progress[1], progress[2], progress[2] > 0 and progress[1] / progress[2] * 100 or 0), 1, 1, 1) end
+        if progress then tooltip:AddLine(string.format("%s: %d/%d (%.1f%%)", self:CollectionText(style.nameZh, style.nameEn), progress[1], progress[2], progress[2] > 0 and progress[1] / progress[2] * 100 or 0), 1, 1, 1) end
     end
     if peer.version ~= self.CardCatalogVersion then tooltip:AddLine(self:CollectionText("卡牌目录版本不同", "Different catalogue version"), 1, 0.6, 0) end
     tooltip:Show()
