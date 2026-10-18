@@ -1,6 +1,6 @@
 ## Interface: 120100, 38002, 20506, 11509, 50504, 16001
 ## Title: CardMaster: NerfLegacy
 ## Notes: NerfLegacy card artwork for CardMaster.
-## Version: 1.1.172
+## Version: 1.1.173
 
 Resources.lua

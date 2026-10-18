@@ -2,16 +2,39 @@ local _, Addon = ...
 
 local ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\Footer\\"
 local ENTRIES = {
+    { id = "kook", zh = "KOOK", en = "KOOK", chinese = true, url = "https://kook.vip/DqQ5U4" },
+    { id = "discord", zh = "Discord", en = "Discord", chinese = false, pending = true },
+    { id = "afdian", zh = "爱发电", en = "爱发电", chinese = true, url = "https://ifdian.net/a/cardmaster" },
+    { id = "patreon", zh = "Patreon", en = "Patreon", chinese = false, pending = true },
     { id = "mangui", zh = "MangUI", en = "MangUI", fullColor = true, copyText = "MangUI" },
-    { id = "afdian", zh = "爱发电", en = "Afdian", url = "https://ifdian.net/a/cardmaster" },
-    { id = "patreon", zh = "Patreon", en = "Patreon", pending = true },
-    { id = "discord", zh = "Discord", en = "Discord", pending = true },
-    { id = "kook", zh = "KOOK", en = "KOOK", url = "https://kook.vip/DqQ5U4" },
     { id = "github", zh = "GitHub", en = "GitHub", url = "https://github.com/Nicconicc/CardMaster" },
 }
 
 local function text(zh, en)
     return Addon.db and Addon.db.language == "enUS" and en or zh
+end
+
+local function chineseClient()
+    local locale = GetLocale and GetLocale() or "enUS"
+    return locale == "zhCN" or locale == "zhTW"
+end
+
+local function description(entry)
+    if entry.id == "mangui" then
+        return text("欢迎使用MangUI界面插件，它经常和卡牌大师配套使用，祝开心", "Welcome to MangUI! It is often used alongside CardMaster. Have fun!")
+    elseif entry.id == "kook" then
+        return text("欢迎加入KOOK社群，在这里找到作者，并与朋友们畅聊。", "Join our KOOK community to meet the author and chat with friends.")
+    elseif entry.id == "afdian" then
+        local total = 0
+        for _, style in ipairs(Addon:GetCardFrontStyles()) do
+            local _, count = Addon:GetCardCollectionProgress(style.id)
+            total = total + count
+        end
+        return string.format(text("感谢您请我喝茶，我已绘制了%d张卡牌，您的支持是我开发和绘制下一套卡牌的绝对动力。", "Thank you for treating me to tea! I have drawn %d cards, and your support keeps me developing CardMaster and drawing the next set."), total)
+    elseif entry.pending then
+        return text("创建中，请等待", "Coming soon, please wait")
+    end
+    return text("复制下方网址，在浏览器中打开。", "Copy the website address below and open it in your browser.")
 end
 
 local function call(fn, ...)
@@ -153,17 +176,19 @@ function Addon:CreateOptionsFooter(window)
     window.cpuFooter = cpu
 
     local bar = CreateFrame("Frame", nil, window)
-    bar:SetSize((#ENTRIES - 1) * 42 + 32, 30)
+    bar:SetSize(158, 30)
     bar:SetPoint("BOTTOMRIGHT", -20, 12)
     bar.buttons = {}
     window.footerLinks = bar
     bar.label = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    bar.label:SetFont(cpuFont, 11, "")
+    bar.label:SetJustifyV("MIDDLE")
     bar.label:SetPoint("RIGHT", bar, "LEFT", -12, 0)
     bar.label:SetText(text("社区及捐助", "Community & Support"))
     bar.label:SetTextColor(0.7, 0.75, 0.8)
 
     local popup = panel(bar)
-    popup:SetSize(380, 138)
+    popup:SetSize(420, 158)
     popup:SetPoint("BOTTOMRIGHT", bar, "TOPRIGHT", 0, 5)
     popup:SetFrameStrata("TOOLTIP")
     popup:SetClampedToScreen(true)
@@ -172,21 +197,23 @@ function Addon:CreateOptionsFooter(window)
     self:EnableWindowEscape(popup)
     popup.title = popup:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     popup.title:SetPoint("TOPLEFT", 12, -12)
+    popup.title:SetTextColor(1, 0.82, 0)
     popup.description = popup:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     popup.description:SetPoint("TOPLEFT", 12, -35)
-    popup.description:SetSize(356, 40)
+    popup.description:SetSize(396, 60)
     popup.description:SetJustifyH("LEFT")
     popup.description:SetWordWrap(true)
+    popup.description:SetTextColor(1, 1, 1)
     popup.hint = popup:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     popup.hint:SetPoint("BOTTOMLEFT", 12, 10)
     local address = CreateFrame("EditBox", nil, popup, "InputBoxTemplate")
-    address:SetPoint("TOPLEFT", 16, -81)
-    address:SetSize(348, 23)
+    address:SetPoint("TOPLEFT", 16, -103)
+    address:SetSize(388, 23)
     address:SetFontObject(GameFontHighlightSmall)
     address:SetAutoFocus(false)
     address:SetScript("OnEscapePressed", function() popup:Hide() end)
     address:SetScript("OnEditFocusGained", function(owner) owner:HighlightText() end)
-    address:SetScript("OnMouseUp", function(owner) owner:SetFocus(); owner:HighlightText() end)
+    address:SetScript("OnMouseUp", function(owner) popup.pinned = true; owner:SetFocus(); owner:HighlightText() end)
     address:SetScript("OnTextChanged", function(owner, userInput)
         if userInput and popup.copyText then owner:SetText(popup.copyText); owner:HighlightText() end
     end)
@@ -198,15 +225,56 @@ function Addon:CreateOptionsFooter(window)
     popup:SetScript("OnHide", function()
         address:ClearFocus()
         if popup.owner then highlight(popup.owner, false) end
-        popup.owner, popup.copyText = nil, nil
+        popup.owner, popup.copyText, popup.pinned = nil, nil, nil
     end)
     bar.popup = popup
+
+    -- Leave time to cross the small gap into the copyable popup. A click pins
+    -- it until closed so copying does not depend on keeping the pointer still.
+    local hideToken = 0
+    local function cancelHide()
+        hideToken = hideToken + 1
+    end
+    local function scheduleHide()
+        cancelHide()
+        local token = hideToken
+        C_Timer.After(0.25, function()
+            if token ~= hideToken or popup.pinned or not popup:IsShown() then return end
+            if MouseIsOver(popup) or (popup.owner and MouseIsOver(popup.owner)) then return end
+            popup:Hide()
+        end)
+    end
+    popup:SetScript("OnEnter", cancelHide)
+    popup:SetScript("OnLeave", scheduleHide)
+    address:SetScript("OnEnter", cancelHide)
+    address:SetScript("OnLeave", scheduleHide)
+
+    local function showPopup(owner, focus)
+        cancelHide()
+        GameTooltip:Hide()
+        local sameOwner = popup.owner == owner
+        if popup.owner and not sameOwner then highlight(popup.owner, false) end
+        popup.owner = owner
+        popup.pinned = focus or (sameOwner and popup.pinned) or false
+        local entry = owner.entry
+        popup.title:SetText(text(entry.zh, entry.en))
+        popup.description:SetText(description(entry))
+        popup.copyText = entry.copyText or entry.url or text("创建中，请等待", "Coming soon, please wait")
+        popup.hint:SetText(text("按 Ctrl+C 复制", "Press Ctrl+C to copy"))
+        if not sameOwner then address:ClearFocus() end
+        address:SetText(popup.copyText)
+        popup:Show()
+        highlight(owner, true)
+        if focus then
+            address:SetFocus()
+            address:HighlightText()
+        end
+    end
 
     for index, entry in ipairs(ENTRIES) do
         local button = CreateFrame("Button", nil, bar)
         button.entry = entry
         button:SetSize(32, 30)
-        button:SetPoint("LEFT", bar, "LEFT", (index - 1) * 42, 0)
         button.glow = button:CreateTexture(nil, "BACKGROUND")
         button.glow:SetTexture("Interface\\Buttons\\UI-Common-MouseHilight")
         button.glow:SetBlendMode("ADD")
@@ -224,44 +292,19 @@ function Addon:CreateOptionsFooter(window)
         end
         highlight(button, false)
         button:SetScript("OnEnter", function(owner)
-            highlight(owner, true)
-            GameTooltip:SetOwner(owner, "ANCHOR_TOP")
-            GameTooltip:SetText(text(entry.zh, entry.en), 1, 0.82, 0)
-            GameTooltip:Show()
+            showPopup(owner, false)
         end)
         button:SetScript("OnLeave", function(owner)
             highlight(owner, popup:IsShown() and popup.owner == owner)
-            GameTooltip:Hide()
+            scheduleHide()
         end)
         button:SetScript("OnClick", function(owner)
-            GameTooltip:Hide()
-            if popup.owner and popup.owner ~= owner then highlight(popup.owner, false) end
-            popup.owner = owner
-            popup.title:SetText(text(entry.zh, entry.en))
-            if entry.copyText then
-                popup.description:SetText(text("复制插件名，在插件平台搜索 MangUI。", "Copy the addon name and search for MangUI on an addon platform."))
-                popup.copyText = entry.copyText
-            elseif entry.pending then
-                popup.description:SetText(text("创建中，请等待", "Coming soon, please wait"))
-                popup.copyText = nil
-            else
-                popup.description:SetText(text("复制下方网址，在浏览器中打开。", "Copy the website address below and open it in your browser."))
-                popup.copyText = entry.url
-            end
-            popup.hint:SetText(popup.copyText and text("按 Ctrl+C 复制", "Press Ctrl+C to copy") or "")
-            address:ClearFocus()
-            address:SetText(popup.copyText or "")
-            address:SetShown(popup.copyText ~= nil)
-            popup:Show()
-            highlight(owner, true)
-            if popup.copyText then
-                address:SetFocus()
-                address:HighlightText()
-            end
+            showPopup(owner, true)
         end)
         bar.buttons[index] = button
     end
     bar:SetScript("OnHide", function() popup:Hide(); GameTooltip:Hide() end)
+    self:RefreshOptionsFooter()
 end
 
 function Addon:RefreshOptionsFooter()
@@ -269,5 +312,17 @@ function Addon:RefreshOptionsFooter()
     if not bar then return end
     bar.label:SetText(text("社区及捐助", "Community & Support"))
     bar.popup:Hide()
+    local chinese = chineseClient()
+    local visible = 0
+    for _, button in ipairs(bar.buttons) do
+        local show = button.entry.chinese == nil or button.entry.chinese == chinese
+        button:SetShown(show)
+        button:ClearAllPoints()
+        if show then
+            button:SetPoint("LEFT", bar, "LEFT", visible * 42, 0)
+            visible = visible + 1
+        end
+    end
+    bar:SetWidth(math.max(32, (visible - 1) * 42 + 32))
     GameTooltip:Hide()
 end
