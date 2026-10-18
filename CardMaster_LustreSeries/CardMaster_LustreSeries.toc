@@ -4,6 +4,6 @@
 ## Title-zhTW: 卡牌大師：II 流光系列
 ## Notes: Lustre Series card artwork for CardMaster.
 ## Notes-zhCN: 卡牌大师的流光系列卡牌资源。
-## Version: 1.1.177
+## Version: 1.1.178
 
 Resources.lua

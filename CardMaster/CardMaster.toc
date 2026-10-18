@@ -3,11 +3,10 @@
 ## Title-zhCN: CardMaster |cff69ccf0卡牌大师|r
 ## Title-zhTW: CardMaster |cff69ccf0卡牌大师|r
 ## IconTexture: Interface\AddOns\CardMaster\Textures\Assets\CMLogo.png
-## Notes: Customizable card animations for abilities, combat, bosses, loot, AFK, level-ups and countdowns. Collect two hand-drawn sets of class ability and boss cards as you adventure, and track your collection progress.
-## Notes-zhCN: 为技能、战斗、首领、掉落、暂离、升级和倒计时提供可自定义的卡牌动画；在冒险中收集两套原创手绘卡牌，浏览职业技能与首领卡牌，追踪收藏进度。
-## Notes-zhTW: 為技能、戰鬥、首領、掉落、暫離、升級及倒數計時提供可自訂的卡牌動畫；在冒險中收集兩套原創手繪卡牌，瀏覽職業技能與首領卡牌，追蹤收藏進度。
+## Notes: Customizable card animations for abilities, combat, bosses, loot, AFK, level-ups and countdowns. Collect thousands of original hand-drawn class ability and boss cards as you adventure, and track your collection progress.
+## Notes-zhCN: 为技能、战斗、首领、掉落、暂离、升级和倒计时提供可自定义的卡牌动画；在冒险中收集原创手绘卡牌，浏览几千张职业技能与首领卡牌，追踪收藏进度。
 ## Author: Nc
-## Version: 1.1.177
+## Version: 1.1.178
 ## OptionalDeps: CardMasterCollection, CardMaster_HallowedForgeSeries, CardMaster_LustreSeries
 ## SavedVariables: CardMasterDB, MangUICardMasterDB
 
