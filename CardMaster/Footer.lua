@@ -2,10 +2,10 @@ local _, Addon = ...
 
 local ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\Footer\\"
 local ENTRIES = {
-    { id = "kook", zh = "KOOK", en = "KOOK", chinese = true, url = "https://kook.vip/DqQ5U4" },
-    { id = "discord", zh = "Discord", en = "Discord", chinese = false, pending = true },
-    { id = "afdian", zh = "爱发电", en = "爱发电", chinese = true, url = "https://ifdian.net/a/cardmaster" },
-    { id = "patreon", zh = "Patreon", en = "Patreon", chinese = false, pending = true },
+    { id = "kook", zh = "KOOK", en = "KOOK", chinese = true, activeTexture = "kook_color.tga", url = "https://kook.vip/DqQ5U4" },
+    { id = "discord", zh = "Discord", en = "Discord", chinese = false, activeTexture = "discord_color.tga", pending = true },
+    { id = "afdian", zh = "爱发电", en = "爱发电", chinese = true, activeTexture = "afdian_color.tga", url = "https://ifdian.net/a/cardmaster" },
+    { id = "patreon", zh = "Patreon", en = "Patreon", chinese = false, activeTexture = "patreon_color.tga", pending = true },
     { id = "mangui", zh = "MangUI", en = "MangUI", fullColor = true, copyText = "MangUI" },
     { id = "github", zh = "GitHub", en = "GitHub", url = "https://github.com/Nicconicc/CardMaster" },
 }
@@ -114,8 +114,9 @@ end
 local function highlight(button, active)
     local entry = button.entry
     button.icon:SetTexture(entry.fullColor and (ROOT .. "MangUI.png") or
-        (ROOT .. entry.id .. (active and "_white" or "") .. ".tga"))
-    button.icon:SetDesaturated(not entry.fullColor)
+        (ROOT .. (active and entry.activeTexture or (entry.id .. (active and "_white" or "") .. ".tga"))))
+    button.icon:SetDesaturated(not (entry.fullColor or active))
+    button.icon:SetVertexColor(1, 1, 1, 1)
     button.icon:SetAlpha(entry.fullColor and 1 or (active and 1 or 0.65))
     button.glow:SetShown(active)
     if button.shine then button.shine:SetShown(active) end
@@ -180,8 +181,7 @@ function Addon:CreateOptionsFooter(window)
     bar:SetPoint("BOTTOMRIGHT", -20, 12)
     bar.buttons = {}
     window.footerLinks = bar
-    bar.label = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    bar.label:SetFont(cpuFont, 11, "")
+    bar.label = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     bar.label:SetJustifyV("MIDDLE")
     bar.label:SetPoint("RIGHT", bar, "LEFT", -12, 0)
     bar.label:SetText(chineseClient() and "在这里找到作者" or "Community & Support")
@@ -199,6 +199,7 @@ function Addon:CreateOptionsFooter(window)
     popup.title:SetPoint("TOPLEFT", 12, -12)
     popup.title:SetTextColor(1, 0.82, 0)
     local popupFont, popupFontSize, popupFontFlags = popup.title:GetFont()
+    bar.label:SetFont(popupFont, popupFontSize, popupFontFlags)
     popup.description = popup:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     popup.description:SetFont(popupFont, popupFontSize, popupFontFlags)
     popup.description:SetPoint("TOPLEFT", popup.title, "BOTTOMLEFT", 0, -8)
@@ -206,6 +207,8 @@ function Addon:CreateOptionsFooter(window)
     popup.description:SetJustifyH("LEFT")
     popup.description:SetJustifyV("TOP")
     popup.description:SetWordWrap(true)
+    popup.description:SetNonSpaceWrap(true)
+    if popup.description.SetMaxLines then popup.description:SetMaxLines(0) end
     popup.description:SetTextColor(1, 1, 1)
     popup.hint = popup:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     popup.hint:SetFont(popupFont, popupFontSize, popupFontFlags)
@@ -255,6 +258,17 @@ function Addon:CreateOptionsFooter(window)
     address:SetScript("OnEnter", cancelHide)
     address:SetScript("OnLeave", scheduleHide)
 
+    local function layoutPopup()
+        -- Clear the last entry's height before measuring; otherwise a short
+        -- tooltip can constrain a later long Chinese description to one line.
+        popup.description:SetHeight(0)
+        local descriptionHeight = math.max(popupFontSize, math.ceil(popup.description:GetStringHeight())) + 2
+        popup.description:SetHeight(descriptionHeight)
+        popup:SetHeight(12 + math.ceil(popup.title:GetStringHeight()) + 8
+            + descriptionHeight + 10 + 23 + 8
+            + math.ceil(popup.hint:GetStringHeight()) + 12)
+    end
+
     local function showPopup(owner, focus)
         cancelHide()
         GameTooltip:Hide()
@@ -264,19 +278,17 @@ function Addon:CreateOptionsFooter(window)
         popup.pinned = focus or (sameOwner and popup.pinned) or false
         local entry = owner.entry
         popup.title:SetText(text(entry.zh, entry.en))
+        popup.description:SetHeight(0)
         popup.description:SetText(description(entry))
         popup.copyText = entry.copyText or entry.url or text("创建中，请等待", "Coming soon, please wait")
         popup.hint:SetText(text("按 Ctrl+C 复制", "Press Ctrl+C to copy"))
-        -- Measure wrapped text so short descriptions stay compact and longer
-        -- donation messages grow without leaving a fixed empty text area.
-        local descriptionHeight = math.ceil(popup.description:GetStringHeight())
-        popup.description:SetHeight(descriptionHeight)
-        popup:SetHeight(12 + math.ceil(popup.title:GetStringHeight()) + 8
-            + descriptionHeight + 10 + 23 + 8
-            + math.ceil(popup.hint:GetStringHeight()) + 12)
+        layoutPopup()
         if not sameOwner then address:ClearFocus() end
         address:SetText(popup.copyText)
         popup:Show()
+        C_Timer.After(0, function()
+            if popup:IsShown() and popup.owner == owner then layoutPopup() end
+        end)
         highlight(owner, true)
         if focus then
             address:SetFocus()
