@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.171"
+Addon.buildVersion = "1.1.172"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -269,8 +269,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    -- V1.0 由作者手动维护；后缀三位序号随每次功能修改递增。
-    title:SetText("CardMaster 卡牌大师 - V" .. self.buildVersion .. " 2026/10/17 2100")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0030")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1668,6 +1667,8 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0030")
+    self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))
     self.options.tabs.collection.label:SetText(self:T("collection"))

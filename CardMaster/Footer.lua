@@ -3,12 +3,11 @@ local _, Addon = ...
 local ROOT = "Interface\\AddOns\\CardMaster\\Textures\\Assets\\Footer\\"
 local ENTRIES = {
     { id = "mangui", zh = "MangUI", en = "MangUI", fullColor = true, copyText = "MangUI" },
-    { id = "paypal", zh = "PayPal", en = "PayPal", url = "https://www.paypal.com/" },
-    { id = "afdian", zh = "爱发电", en = "Afdian", url = "https://afdian.com/" },
-    { id = "patreon", zh = "Patreon", en = "Patreon", url = "https://www.patreon.com/" },
-    { id = "discord", zh = "Discord", en = "Discord", url = "https://discord.com/" },
-    { id = "kook", zh = "Kook", en = "Kook", url = "https://www.kookapp.cn/" },
-    { id = "changelog", zh = "更新日志", en = "Changelog", changelog = true },
+    { id = "afdian", zh = "爱发电", en = "Afdian", url = "https://ifdian.net/a/cardmaster" },
+    { id = "patreon", zh = "Patreon", en = "Patreon", pending = true },
+    { id = "discord", zh = "Discord", en = "Discord", pending = true },
+    { id = "kook", zh = "KOOK", en = "KOOK", url = "https://kook.vip/DqQ5U4" },
+    { id = "github", zh = "GitHub", en = "GitHub", url = "https://github.com/Nicconicc/CardMaster" },
 }
 
 local function text(zh, en)
@@ -154,10 +153,14 @@ function Addon:CreateOptionsFooter(window)
     window.cpuFooter = cpu
 
     local bar = CreateFrame("Frame", nil, window)
-    bar:SetSize(284, 30)
+    bar:SetSize((#ENTRIES - 1) * 42 + 32, 30)
     bar:SetPoint("BOTTOMRIGHT", -20, 12)
     bar.buttons = {}
     window.footerLinks = bar
+    bar.label = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    bar.label:SetPoint("RIGHT", bar, "LEFT", -12, 0)
+    bar.label:SetText(text("社区及捐助", "Community & Support"))
+    bar.label:SetTextColor(0.7, 0.75, 0.8)
 
     local popup = panel(bar)
     popup:SetSize(380, 138)
@@ -238,21 +241,33 @@ function Addon:CreateOptionsFooter(window)
             if entry.copyText then
                 popup.description:SetText(text("复制插件名，在插件平台搜索 MangUI。", "Copy the addon name and search for MangUI on an addon platform."))
                 popup.copyText = entry.copyText
-            elseif entry.changelog then
-                popup.description:SetText(text("已更新底栏样式与子框体间距，并加入 CPU 用量显示。", "Updated the footer and panel spacing; added CPU usage display."))
-                popup.copyText = window.title:GetText()
+            elseif entry.pending then
+                popup.description:SetText(text("创建中，请等待", "Coming soon, please wait"))
+                popup.copyText = nil
             else
                 popup.description:SetText(text("复制下方网址，在浏览器中打开。", "Copy the website address below and open it in your browser."))
                 popup.copyText = entry.url
             end
-            popup.hint:SetText(text("按 Ctrl+C 复制", "Press Ctrl+C to copy"))
-            address:SetText(popup.copyText)
+            popup.hint:SetText(popup.copyText and text("按 Ctrl+C 复制", "Press Ctrl+C to copy") or "")
+            address:ClearFocus()
+            address:SetText(popup.copyText or "")
+            address:SetShown(popup.copyText ~= nil)
             popup:Show()
             highlight(owner, true)
-            address:SetFocus()
-            address:HighlightText()
+            if popup.copyText then
+                address:SetFocus()
+                address:HighlightText()
+            end
         end)
         bar.buttons[index] = button
     end
     bar:SetScript("OnHide", function() popup:Hide(); GameTooltip:Hide() end)
+end
+
+function Addon:RefreshOptionsFooter()
+    local bar = self.options and self.options.footerLinks
+    if not bar then return end
+    bar.label:SetText(text("社区及捐助", "Community & Support"))
+    bar.popup:Hide()
+    GameTooltip:Hide()
 end

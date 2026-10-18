@@ -1,7 +1,7 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "1.1.171"
+Addon.version = "1.1.172"
 Addon.eventFrame = CreateFrame("Frame")
 Addon.pendingItems = {}
 Addon.encounterActive = false
@@ -57,7 +57,7 @@ Addon.defaults = defaults
 
 Addon.strings = {
     zhCN = {
-        addonName = "CardMaster 卡牌大师",
+        addonName = "卡牌大师",
         gameplay = "玩法设置",
         styles = "卡牌样式",
         collection = "卡牌总览",
