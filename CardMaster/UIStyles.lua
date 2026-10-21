@@ -15,14 +15,6 @@ function Addon:HasLegacyOptionsStyle(region)
     return false
 end
 local interfaceFonts = setmetatable({}, {__mode = "k"})
-function Addon:ClientInterfaceFontSize(nominal)
-    local size
-    if GameFontNormal and GameFontNormal.GetFont then
-        local _, current = GameFontNormal:GetFont()
-        if type(current) == "number" and current > 0 then size = current end
-    end
-    return math.max(1, (size or 13) + (nominal or 13) - 13)
-end
 function Addon:BindInterfaceFont(region, nominal, path, flags)
     local record = {nominal = nominal, path = path, flags = flags or ""}
     interfaceFonts[region] = record

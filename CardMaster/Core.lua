@@ -1,7 +1,17 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "1.1.179"
+Addon.version = "1.1.180"
+-- Movers are constructed at file load, before UIStyles.lua in the TOC.
+-- Keep this dependency-free size resolver available from the first file.
+function Addon:ClientInterfaceFontSize(nominal)
+    local size
+    if GameFontNormal and GameFontNormal.GetFont then
+        local _, current = GameFontNormal:GetFont()
+        if type(current) == "number" and current > 0 then size = current end
+    end
+    return math.max(1, (size or 13) + (nominal or 13) - 13)
+end
 Addon.eventFrame = CreateFrame("Frame")
 Addon.pendingItems = {}
 Addon.encounterActive = false
