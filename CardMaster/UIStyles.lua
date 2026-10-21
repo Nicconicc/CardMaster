@@ -14,9 +14,45 @@ function Addon:HasLegacyOptionsStyle(region)
     end
     return false
 end
+local interfaceFonts = setmetatable({}, {__mode = "k"})
+function Addon:ClientInterfaceFontSize(nominal)
+    local size
+    if GameFontNormal and GameFontNormal.GetFont then
+        local _, current = GameFontNormal:GetFont()
+        if type(current) == "number" and current > 0 then size = current end
+    end
+    return math.max(1, (size or 13) + (nominal or 13) - 13)
+end
+function Addon:BindInterfaceFont(region, nominal, path, flags)
+    local record = {nominal = nominal, path = path, flags = flags or ""}
+    interfaceFonts[region] = record
+    record.size = self:ClientInterfaceFontSize(nominal)
+    region:SetFont(path, record.size, record.flags)
+end
+function Addon:UseInheritedInterfaceFont(region, object)
+    interfaceFonts[region] = nil
+    region:SetFontObject(object)
+end
+function Addon:RefreshInterfaceFonts()
+    for region, record in pairs(interfaceFonts) do
+        local size = self:ClientInterfaceFontSize(record.nominal)
+        if size ~= record.size then
+            record.size = size
+            region:SetFont(record.path, size, record.flags)
+        end
+    end
+end
+local fontWatcher = CreateFrame("Frame")
+local fontElapsed = 0
+fontWatcher:SetScript("OnUpdate", function(_, elapsed)
+    fontElapsed = fontElapsed + elapsed
+    if fontElapsed < 0.5 then return end
+    fontElapsed = 0
+    Addon:RefreshInterfaceFonts()
+end)
 function Addon:SetControlFont(region, size)
     if self:HasLegacyOptionsStyle(region) then return end
-    region:SetFont(STANDARD_TEXT_FONT or "Fonts\\ARKai_T.ttf", size or 12, "")
+    self:BindInterfaceFont(region, size or 12, STANDARD_TEXT_FONT or "Fonts\\ARKai_T.ttf", "")
 end
 
 function Addon:StyleButton(b, force)

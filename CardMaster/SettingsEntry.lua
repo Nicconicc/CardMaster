@@ -54,15 +54,15 @@ function Addon:RegisterSettingsEntry()
         local function Refresh()
             local english = Addon.db and Addon.db.language == "enUS"
             local font = STANDARD_TEXT_FONT or "Fonts\\ARKai_T.ttf"
-            title:SetFont(font, 36, "OUTLINE")
+            Addon:BindInterfaceFont(title, 36, font, "OUTLINE")
             title:SetText(Addon:T("addonName"))
-            version:SetFont(font, 16, "")
+            Addon:BindInterfaceFont(version, 16, font, "")
             version:SetText((english and "Version: " or "版本：") .. (Addon.buildVersion or Addon.version))
-            instructions:SetFont(font, 16, "")
+            Addon:BindInterfaceFont(instructions, 16, font, "")
             instructions:SetText(english and "Type /cm to open options" or "输入 /cm 打开选项")
             button:SetText(english and "Open options" or "打开选项")
             local label = button:GetFontString()
-            if label then label:SetFont(font, 22, ""); label:SetTextColor(1, .82, 0) end
+            if label then Addon:BindInterfaceFont(label, 22, font, ""); label:SetTextColor(1, .82, 0) end
             Layout()
             if C_Timer and C_Timer.After and not panel.layoutQueued then
                 panel.layoutQueued = true

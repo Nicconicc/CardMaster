@@ -6,7 +6,7 @@
 ## Notes: Customizable card animations for abilities, combat, bosses, loot, AFK, level-ups and countdowns. Collect thousands of original hand-drawn class ability and boss cards as you adventure, and track your collection progress.
 ## Notes-zhCN: 为技能、战斗、首领、掉落、暂离、升级和倒计时提供可自定义的卡牌动画；在冒险中收集原创手绘卡牌，浏览几千张职业技能与首领卡牌，追踪收藏进度。
 ## Author: Nc
-## Version: 1.1.178
+## Version: 1.1.179
 ## OptionalDeps: CardMasterCollection, CardMaster_HallowedForgeSeries, CardMaster_LustreSeries
 ## SavedVariables: CardMasterDB, MangUICardMasterDB
 

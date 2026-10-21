@@ -139,7 +139,7 @@ function Addon:CreateOptionsFooter(window)
     end
     cpu.label = cpu:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     local cpuFont = STANDARD_TEXT_FONT or select(1, cpu.label:GetFont())
-    cpu.label:SetFont(cpuFont, 11, "")
+    self:BindInterfaceFont(cpu.label, 11, cpuFont, "")
     cpu.label:SetPoint("LEFT", 23, 0)
     cpu.label:SetJustifyV("MIDDLE")
     cpu.label:SetTextColor(0.7, 0.75, 0.8)

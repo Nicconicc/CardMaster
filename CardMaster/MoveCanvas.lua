@@ -49,12 +49,12 @@ function Addon:CreateMoveCanvas(owner, moduleKey, positionProvider)
 
     local font, _, flags = GameFontNormal:GetFont()
     canvas.title = canvas:CreateFontString(nil, "OVERLAY")
-    canvas.title:SetFont(font, 14, flags or "")
+    canvas.title:SetFont(font, self:ClientInterfaceFontSize(14), flags or "")
     canvas.title:SetPoint("BOTTOMLEFT", canvas, "TOPLEFT", 0, 4)
     canvas.title:SetJustifyH("LEFT")
     canvas.title:SetTextColor(1, 1, 1)
     canvas.coordinates = canvas:CreateFontString(nil, "OVERLAY")
-    canvas.coordinates:SetFont(font, 12, flags or "")
+    canvas.coordinates:SetFont(font, self:ClientInterfaceFontSize(12), flags or "")
     canvas.coordinates:SetPoint("LEFT", canvas.title, "RIGHT", 8, 0)
     canvas.coordinates:SetJustifyH("LEFT")
     canvas.coordinates:SetTextColor(1, 0.82, 0)
@@ -62,12 +62,14 @@ function Addon:CreateMoveCanvas(owner, moduleKey, positionProvider)
     local function update()
         local relativeScale = (owner:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1)
         if relativeScale <= 0 then relativeScale = 1 end
-        if canvas.relativeScale ~= relativeScale then
+        local clientTitleSize = Addon:ClientInterfaceFontSize(14)
+        if canvas.relativeScale ~= relativeScale or canvas.clientTitleSize ~= clientTitleSize then
+            canvas.clientTitleSize = clientTitleSize
             canvas.relativeScale = relativeScale
             positionSlices(relativeScale)
             -- Keep borders and coordinate labels the same size across module scales.
-            canvas.title:SetFont(font, 14 / relativeScale, flags or "")
-            canvas.coordinates:SetFont(font, 12 / relativeScale, flags or "")
+            canvas.title:SetFont(font, clientTitleSize / relativeScale, flags or "")
+            canvas.coordinates:SetFont(font, Addon:ClientInterfaceFontSize(12) / relativeScale, flags or "")
             canvas.title:ClearAllPoints()
             canvas.title:SetPoint("BOTTOMLEFT", canvas, "TOPLEFT", 0, 4 / relativeScale)
             canvas.coordinates:ClearAllPoints()

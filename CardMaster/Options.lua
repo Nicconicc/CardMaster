@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.178"
+Addon.buildVersion = "1.1.179"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -269,7 +269,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0255")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/21 1953")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -319,7 +319,7 @@ function Addon:CreateOptions()
     panel.body:SetPoint("TOPLEFT", 14, -61)
     panel.body:SetPoint("BOTTOMRIGHT", -14, 49)
     addBackdrop(panel.body)
-    panel.body:SetBackdropColor(0, 0, 0, 0.35)
+    panel.body:SetBackdropColor(0, 0, 0, 0)
 
     panel.recycleBin = CreateFrame("Frame", nil, panel)
     panel.recycleBin:Hide()
@@ -365,6 +365,7 @@ function Addon:CreateSectionTitle(parent, text, y)
         area:SetHeight(30)
         area:SetFrameLevel(math.max(0, parent:GetFrameLevel() - 1))
         addBackdrop(area)
+        area:SetBackdropColor(0.12, 0.12, 0.13, 0.75)
         parent.currentSection = area
         parent.sectionTop = y - 18
         local label = area:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
@@ -848,7 +849,13 @@ function Addon:BuildGameplay()
     navigationContent:SetSize(211, #MODULE_ORDER * 26)
     navigationScroll:SetScrollChild(navigationContent)
 
+    local controlsPanel = CreateFrame("Frame", nil, body, "BackdropTemplate")
+    controlsPanel:SetPoint("TOPLEFT", navigation, "TOPRIGHT", 6, 0)
+    controlsPanel:SetPoint("BOTTOMRIGHT", body, "BOTTOMRIGHT")
+    addBackdrop(controlsPanel)
+    controlsPanel:SetFrameLevel(body:GetFrameLevel() + 1)
     local moduleHeader = CreateFrame("Frame", nil, body, "BackdropTemplate")
+    moduleHeader:SetFrameLevel(controlsPanel:GetFrameLevel() + 1)
     moduleHeader:SetPoint("TOPLEFT", navigation, "TOPRIGHT", 6, -5)
     moduleHeader:SetPoint("TOPRIGHT", body, "TOPRIGHT", -34, -5)
     moduleHeader:SetHeight(128)
@@ -859,6 +866,7 @@ function Addon:BuildGameplay()
     scroll:SetPoint("TOPLEFT", moduleHeader, "BOTTOMLEFT", 0, -5)
     scroll:SetPoint("BOTTOMRIGHT", -34, 0)
     local content = CreateFrame("Frame", nil, scroll)
+    scroll:SetFrameLevel(controlsPanel:GetFrameLevel() + 1)
     content:SetWidth(math.max(240, scroll:GetWidth()))
     scroll:HookScript("OnSizeChanged", function(owner, width)
         content:SetWidth(math.max(240, width))
@@ -985,7 +993,7 @@ function Addon:BuildStyles()
         button.label:ClearAllPoints()
         button.label:SetPoint("TOP", button, "TOP", 0, -162)
         button.label:SetWidth(200)
-        button.label:SetFontObject(GameFontHighlight)
+        self:UseInheritedInterfaceFont(button.label, GameFontHighlight)
         button.label:SetWordWrap(true)
         button.label:SetNonSpaceWrap(true)
         button.label:SetJustifyV("TOP")
@@ -1359,7 +1367,7 @@ function Addon:BuildCollection()
         local label = button:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         -- Use the same font setup as the front-style labels in BuildStyles.
         self:SetControlFont(label)
-        label:SetFontObject(GameFontHighlight)
+        self:UseInheritedInterfaceFont(label, GameFontHighlight)
         label:SetPoint("TOP", button, "TOP", 0, -162)
         label:SetWidth(200)
         label:SetJustifyH("CENTER")
@@ -1381,7 +1389,7 @@ function Addon:BuildCollection()
         button.progress:SetStatusBarColor(0.18, 0.70, 0.98, 1)
         button.progressText = button:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         self:SetControlFont(button.progressText)
-        button.progressText:SetFontObject(GameFontHighlight)
+        self:UseInheritedInterfaceFont(button.progressText, GameFontHighlight)
         button.progressText:SetSize(200, 16)
         button.progressText:SetPoint("TOP", progressFrame, "BOTTOM", 0, -5)
         button.progressText:SetJustifyH("CENTER")
@@ -1664,6 +1672,9 @@ end
 
 function Addon:SelectMainTab(tabKey)
     self.selectedTab = tabKey
+    -- Like MangUI, split pages own their pane backgrounds; the Other page
+    -- has one 60% panel. Never stack an extra dark fill behind either.
+    self.options.body:SetBackdropColor(0.12, 0.12, 0.13, tabKey == "misc" and 0.6 or 0)
     for key, button in pairs(self.options.tabs) do
         button.active = key == tabKey
         setButtonStyle(button, button.active)
@@ -1681,7 +1692,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/19 0255")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/21 1953")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))
