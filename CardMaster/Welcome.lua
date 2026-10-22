@@ -103,8 +103,7 @@ function Addon:CreateWelcomeWindow()
     panel:SetScript("OnDragStop", panel.StopMovingOrSizing)
     self:EnableWindowEscape(panel, function() Addon:DismissWelcomeWindow() end)
     if panel.Bg then panel.Bg:SetColorTexture(0.12, 0.12, 0.13, 0.86) end
-    local portrait = panel.Portrait or _G[panel:GetName() .. "Portrait"]
-    if portrait then portrait:SetTexture(ASSET_ROOT .. "CMLogo.png") end
+    self:ApplyWindowLogo(panel)
     local title = panel.TitleText or _G[panel:GetName() .. "TitleText"]
     if title then
         title:SetText(self:T("firstRunTitle"))

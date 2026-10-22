@@ -1,5 +1,36 @@
 local _, Addon = ...
 
+-- Match MangUI 1.0.661/662: retain the template's actual circular opening,
+-- not the center of its asymmetric decorative portrait border.
+function Addon:ApplyWindowLogo(panel)
+    if panel.logo then return end
+    local name = panel:GetName()
+    local portrait = panel.Portrait or (name and _G[name .. "Portrait"])
+        or (panel.PortraitContainer and panel.PortraitContainer.portrait) or panel.portrait
+    if not portrait then return end
+    local interface = GetBuildInfo and select(4, GetBuildInfo())
+    if interface == 38001 and not panel.PortraitContainer then
+        portrait:ClearAllPoints()
+        portrait:SetPoint("TOPLEFT", panel, "TOPLEFT", -10, 11)
+    end
+    local parent = portrait:GetParent()
+    local opening = (panel.PortraitContainer and panel.PortraitContainer.CircleMask) or panel.CircleMask or portrait
+    local background = parent:CreateTexture(nil, "OVERLAY", nil, -2)
+    background:SetAllPoints(opening)
+    background:SetColorTexture(27/255, 25/255, 26/255, 1)
+    local logo = parent:CreateTexture(nil, "OVERLAY", nil, -1)
+    logo:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png")
+    logo:SetTexCoord(.22, .78, .215, .775)
+    logo:SetAllPoints(background)
+    local mask = parent:CreateMaskTexture()
+    mask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetAllPoints(background)
+    background:AddMaskTexture(mask)
+    logo:AddMaskTexture(mask)
+    portrait:Hide()
+    panel.logo, panel.logoBackground, panel.logoMask = logo, background, mask
+end
+
 -- Standalone counterparts of MangUI's editor widgets; MangUI is not required.
 local function clamp(value, minimum, maximum)
     return math.max(minimum, math.min(maximum, value))

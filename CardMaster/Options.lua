@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.180"
+Addon.buildVersion = "1.1.181"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -250,11 +250,7 @@ function Addon:CreateOptions()
         -- WeakAuras' PortraitFrameTemplate options background uses 80% alpha.
         panel.Bg:SetColorTexture(0.12, 0.12, 0.13, 0.8)
     end
-    local portrait = panel.Portrait or _G[panel:GetName() .. "Portrait"]
-    if portrait then
-        portrait:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png")
-        -- Keep the native portrait bounds so the logo fits its metal ring.
-    end
+    self:ApplyWindowLogo(panel)
     panel:Hide()
     -- Modern clients close our window through its own keyboard handler.
     -- Classic clients retain their existing UISpecialFrames behavior.
@@ -269,7 +265,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/22 0050")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/22 2105")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1692,7 +1688,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/22 0050")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/22 2105")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))
@@ -1730,7 +1726,7 @@ function Addon:CreateMinimapButton()
     end
 
     button = CreateFrame("Button", "CardMasterMinimapButton", Minimap)
-    button:SetSize(31, 31)
+    button:SetSize(32, 32)
     button:SetPoint("CENTER", Minimap, "CENTER", -76, -62)
     button:SetFrameStrata("HIGH")
     -- Match the Classic LibDBIcon button regions.  HidingBar's settings preview
@@ -1738,17 +1734,24 @@ function Addon:CreateMinimapButton()
     -- Masque skinning is disabled.  These standard textures also let HidingBar
     -- remove the original chrome when it applies a Masque skin.
     local background = button:CreateTexture("CardMasterMinimapButtonBackground", "BACKGROUND")
-    background:SetSize(20, 20)
-    background:SetPoint("TOPLEFT", 7, -5)
-    background:SetTexture(136467) -- UI-Minimap-Background
+    background:SetSize(26, 26)
+    background:SetPoint("CENTER", button, "CENTER", 0, 0)
+    background:SetColorTexture(27/255, 25/255, 26/255, 1)
     button.background = background
     local icon = button:CreateTexture("CardMasterMinimapButtonIcon", "ARTWORK")
-    icon:SetSize(17, 17)
-    icon:SetPoint("TOPLEFT", 7, -6)
     icon:SetTexture("Interface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png")
+    -- Tighter than the window crop: only the central badge at minimap size.
+    icon:SetTexCoord(.245, .755, .24, .75)
+    icon:SetAllPoints(background)
+    local mask = button:CreateMaskTexture()
+    mask:SetTexture("Interface\\CHARACTERFRAME\\TempPortraitAlphaMask", "CLAMPTOBLACKADDITIVE", "CLAMPTOBLACKADDITIVE")
+    mask:SetAllPoints(background)
+    background:AddMaskTexture(mask)
+    icon:AddMaskTexture(mask)
+    button.logo, button.logoBackground, button.logoMask = icon, background, mask
     button.icon = icon
     local border = button:CreateTexture("CardMasterMinimapButtonBorder", "OVERLAY")
-    border:SetSize(53, 53)
+    border:SetSize(54, 54)
     border:SetPoint("TOPLEFT", button, "TOPLEFT")
     border:SetTexture(136430) -- MiniMap-TrackingBorder
     button.border = border
