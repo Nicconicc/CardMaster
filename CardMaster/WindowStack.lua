@@ -5,13 +5,25 @@ local _, Addon = ...
 local Stack = { windows = {}, registered = {}, pending = nil, scheduled = false }
 _G.MangUIOptionsWindowStack = Stack
 
+-- Global mouse focus can include Blizzard forbidden/restricted frames. Merely
+-- exposing a method does not mean addon code is allowed to call it.
+local function accessible(frame)
+    local kind = type(frame)
+    if kind ~= "table" and kind ~= "userdata" then return false end
+    if frame.IsForbidden then
+        local ok, forbidden = pcall(frame.IsForbidden, frame)
+        if not ok or forbidden then return false end
+    end
+    return true
+end
+
 local function visibleFrames(window)
     local frames, levels, unique = {}, {}, {}
     local strata = window:GetFrameStrata()
     local function visit(frame)
+        if not accessible(frame) then return end
         if not frame:IsShown() then return end
-        if frame.GetFrameStrata and frame:GetFrameStrata() == strata
-            and not (frame.IsForbidden and frame:IsForbidden()) then
+        if frame.GetFrameStrata and frame:GetFrameStrata() == strata then
             local level = frame:GetFrameLevel()
             frames[#frames + 1] = { frame = frame, level = level }
             if not unique[level] then
@@ -94,16 +106,22 @@ end
 
 function Stack:WindowForFrame(frame)
     for _ = 1, 128 do
-        if not frame then return end
+        if not accessible(frame) then return end
         if self.registered[frame] then return frame end
-        if not frame.GetParent then return end
-        frame = frame:GetParent()
+        if type(frame.GetParent) ~= "function" then return end
+        -- Some restricted native wrappers reject GetParent even when they do
+        -- not report IsForbidden. Only guard this read; never retry a denied
+        -- operation or alter a Blizzard frame.
+        local ok, parent = pcall(frame.GetParent, frame)
+        if not ok or parent == frame then return end
+        frame = parent
     end
 end
 
 local driver = CreateFrame("Frame")
 driver:RegisterEvent("GLOBAL_MOUSE_DOWN")
 driver:SetScript("OnEvent", function()
+    if #Stack.windows == 0 then return end
     if GetMouseFoci then
         for _, frame in ipairs(GetMouseFoci() or {}) do
             local window = Stack:WindowForFrame(frame)

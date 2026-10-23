@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.181"
+Addon.buildVersion = "1.1.182"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -265,7 +265,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/22 2105")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/23 2355")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1688,7 +1688,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/22 2105")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/23 2355")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))
