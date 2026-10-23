@@ -4,6 +4,6 @@
 ## Title-zhTW: 卡牌大師：I 聖鑄系列
 ## Notes: Hallowed Forge Series card artwork for CardMaster.
 ## Notes-zhCN: 卡牌大师的圣铸系列卡牌资源。
-## Version: 1.1.182
+## Version: 1.1.183
 
 Resources.lua

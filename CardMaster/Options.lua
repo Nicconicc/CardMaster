@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.182"
+Addon.buildVersion = "1.1.183"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -265,7 +265,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/23 2355")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/24 0316")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -274,7 +274,7 @@ function Addon:CreateOptions()
         close = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
         close:SetPoint("TOPRIGHT", 3, 3)
     end
-    self:StyleButton(close)
+    -- Keep the native close button's normal, pressed and hover colors.
     close:SetScript("OnClick", function() panel:Hide() end)
 
     -- Keep resizing on a dedicated grip so normal left-dragging continues to move
@@ -1688,7 +1688,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/23 2355")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/24 0316")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))
