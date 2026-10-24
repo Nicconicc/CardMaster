@@ -11,12 +11,11 @@ local categories = {
 Addon.CollectionCategories = categories
 
 function Addon:CollectionChinese()
-    local locale = GetLocale and GetLocale() or "enUS"
-    return locale == "zhCN" or locale == "zhTW"
+    return self:IsChineseLanguage()
 end
 
 function Addon:CollectionText(zh, en)
-    return self:CollectionChinese() and zh or en
+    return self:L(zh, en)
 end
 
 function Addon:CollectionPrint(message, reward)

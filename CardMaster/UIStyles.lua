@@ -47,21 +47,33 @@ function Addon:HasLegacyOptionsStyle(region)
 end
 local interfaceFonts = setmetatable({}, {__mode = "k"})
 function Addon:BindInterfaceFont(region, nominal, path, flags)
+    region.cmInterfaceNominal=nominal
     local record = {nominal = nominal, path = path, flags = flags or ""}
     interfaceFonts[region] = record
     record.size = self:ClientInterfaceFontSize(nominal)
-    region:SetFont(path, record.size, record.flags)
+    record.localePath = self:RegionFontPath(region)
+    region:SetFont(record.localePath, record.size, record.flags)
+end
+function Addon:TrackInterfaceFont(region,nominal,flags)
+    if interfaceFonts[region] then return end
+    interfaceFonts[region]={nominal=nominal,flags=flags,localePath=self:RegionFontPath(region),size=self:ClientInterfaceFontSize(nominal)}
 end
 function Addon:UseInheritedInterfaceFont(region, object)
     interfaceFonts[region] = nil
     region:SetFontObject(object)
+    region.cmInterfaceNominal=nil
+    self:ApplyLocaleFont(region)
 end
 function Addon:RefreshInterfaceFonts()
     for region, record in pairs(interfaceFonts) do
         local size = self:ClientInterfaceFontSize(record.nominal)
-        if size ~= record.size then
+        local path=self:RegionFontPath(region)
+        if size ~= record.size or path ~= record.localePath then
             record.size = size
-            region:SetFont(record.path, size, record.flags)
+            record.localePath = path
+            region.cmUnfittedSize = size
+            region:SetFont(path, size, record.flags)
+            if region.cmFitWidth then self:FitLocaleLabel(region,region.cmFitWidth) end
         end
     end
 end
@@ -74,7 +86,7 @@ fontWatcher:SetScript("OnUpdate", function(_, elapsed)
     Addon:RefreshInterfaceFonts()
 end)
 function Addon:SetControlFont(region, size)
-    if self:HasLegacyOptionsStyle(region) then return end
+    if self:HasLegacyOptionsStyle(region) then self:ApplyLocaleFont(region);return end
     self:BindInterfaceFont(region, size or 12, STANDARD_TEXT_FONT or "Fonts\\ARKai_T.ttf", "")
 end
 
@@ -103,6 +115,7 @@ function Addon:StyleButton(b, force)
             text:SetTextColor(color[1],color[2],color[3],1)
             CenterText(self)
             Addon:SetControlFont(text)
+            Addon:FitLocaleLabel(text,math.max(1,self:GetWidth()-14))
         end
     end
     function b:SetHoverTextColor(r,g,blue)
@@ -192,6 +205,9 @@ function Addon:CreateChoiceSelect(parent, width, label, choices, selected, onCha
             row.check:SetTexture("Interface\\Buttons\\UI-CheckBox-Check")
             row.check:SetShown(index == f.value)
             row.label = row:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            for _, option in ipairs(Addon.languageOptions) do
+                if choice==option.label then row.label.cmLanguageChoiceCode=option.code;break end
+            end
             Addon:SetControlFont(row.label)
             row.label:SetPoint("LEFT", row.check, "RIGHT", 1, 0)
             row.label:SetPoint("RIGHT", row, "RIGHT", -2, 0)
@@ -207,6 +223,8 @@ function Addon:CreateChoiceSelect(parent, width, label, choices, selected, onCha
             dismiss:Hide();if f.menu == menu then f.menu = nil end
         end)
         f.menu = menu
+        Addon:ApplyLocaleTree(menu)
+        for _, row in ipairs(menu.rows) do Addon:FitLocaleLabel(row.label,math.max(1,row:GetWidth()-28)) end
     end
     f.click = CreateFrame("Button", nil, f)
     f.click:SetPoint("BOTTOMLEFT");f.click:SetPoint("BOTTOMRIGHT");f.click:SetHeight(24)

@@ -52,15 +52,14 @@ function Addon:RegisterSettingsEntry()
             end
         end
         local function Refresh()
-            local english = Addon.db and Addon.db.language == "enUS"
-            local font = STANDARD_TEXT_FONT or "Fonts\\ARKai_T.ttf"
+            local font = Addon:InterfaceFontPath()
             Addon:BindInterfaceFont(title, 36, font, "OUTLINE")
             title:SetText(Addon:T("addonName"))
             Addon:BindInterfaceFont(version, 16, font, "")
-            version:SetText((english and "Version: " or "版本：") .. (Addon.buildVersion or Addon.version))
+            version:SetText(Addon:L("版本：", "Version: ") .. (Addon.buildVersion or Addon.version))
             Addon:BindInterfaceFont(instructions, 16, font, "")
-            instructions:SetText(english and "Type /cm to open options" or "输入 /cm 打开选项")
-            button:SetText(english and "Open options" or "打开选项")
+            instructions:SetText(Addon:L("输入 /cm 打开选项", "Type /cm to open options"))
+            button:SetText(Addon:L("打开选项", "Open options"))
             local label = button:GetFontString()
             if label then Addon:BindInterfaceFont(label, 22, font, ""); label:SetTextColor(1, .82, 0) end
             Layout()

@@ -1,7 +1,7 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "1.1.183"
+Addon.version = "1.1.184"
 -- Movers are constructed at file load, before UIStyles.lua in the TOC.
 -- Keep this dependency-free size resolver available from the first file.
 function Addon:ClientInterfaceFontSize(nominal)
@@ -271,8 +271,7 @@ end
 
 function Addon:Print(message)
     local icon = "|TInterface\\AddOns\\CardMaster\\Textures\\Assets\\CMLogo.png:16:16:0:0|t"
-    local locale = GetLocale and GetLocale() or "enUS"
-    local name = (locale == "zhCN" or locale == "zhTW") and "卡牌大师" or "CardMaster"
+    local name = self:T("addonName")
     DEFAULT_CHAT_FRAME:AddMessage("|cffffc34d" .. name .. "|r " .. icon .. " " .. tostring(message))
 end
 
@@ -354,7 +353,7 @@ function Addon:OnEvent(event, ...)
         local loadedName = ...
         if loadedName ~= ADDON_NAME then return end
         self:MigrateSavedVariables()
-        local firstLoad = type(CardMasterDB) ~= "table"
+        self.defaults.language = self:ClientLanguage()
 
         -- Earlier builds reserved these modules for the generic card renderer
         -- at y = 100.  Their imported WA layouts are anchored at y = 200, so
@@ -369,9 +368,9 @@ function Addon:OnEvent(event, ...)
         end
         CardMasterDB = copyDefaults(CardMasterDB, defaults)
         self.db = CardMasterDB
-        if firstLoad then
-            if GetLocale and GetLocale() ~= "zhCN" and GetLocale() ~= "zhTW" then self.db.language = "enUS" end
-        end
+        -- Match MangUI: client language at every login/reload; manual selection
+        -- and imported language remain available for the current session.
+        self.db.language = self:ClientLanguage()
         self:InitCardStyles()
         self:InitCollection()
         self:InitIntegratedModules()
@@ -440,7 +439,7 @@ function Addon:OnEvent(event, ...)
         -- Let other addons finish their login notices first so this welcome
         -- line appears at the end of the startup messages.
         C_Timer.After(5, function()
-            if Addon.db then Addon:Print(Addon.strings[Addon:CollectionChinese() and "zhCN" or "enUS"].welcome) end
+            if Addon.db then Addon:Print(Addon:T("welcome")) end
         end)
     elseif event == "PLAYER_REGEN_ENABLED" then
         self.eventFrame:UnregisterEvent("PLAYER_REGEN_ENABLED")

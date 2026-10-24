@@ -47,7 +47,8 @@ function Addon:CreateMoveCanvas(owner, moduleKey, positionProvider)
         end
     end
 
-    local font, _, flags = GameFontNormal:GetFont()
+    local _, _, flags = GameFontNormal:GetFont()
+    local font = self:InterfaceFontPath()
     canvas.title = canvas:CreateFontString(nil, "OVERLAY")
     canvas.title:SetFont(font, self:ClientInterfaceFontSize(14), flags or "")
     canvas.title:SetPoint("BOTTOMLEFT", canvas, "TOPLEFT", 0, 4)
@@ -63,7 +64,9 @@ function Addon:CreateMoveCanvas(owner, moduleKey, positionProvider)
         local relativeScale = (owner:GetEffectiveScale() or 1) / (UIParent:GetEffectiveScale() or 1)
         if relativeScale <= 0 then relativeScale = 1 end
         local clientTitleSize = Addon:ClientInterfaceFontSize(14)
-        if canvas.relativeScale ~= relativeScale or canvas.clientTitleSize ~= clientTitleSize then
+        font = Addon:InterfaceFontPath()
+        if canvas.relativeScale ~= relativeScale or canvas.clientTitleSize ~= clientTitleSize or canvas.localeFont ~= font then
+            canvas.localeFont = font
             canvas.clientTitleSize = clientTitleSize
             canvas.relativeScale = relativeScale
             positionSlices(relativeScale)

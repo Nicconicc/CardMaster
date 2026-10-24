@@ -371,6 +371,20 @@ function Addon:CreateWelcomeWindow()
     hideWelcomeLabel:SetTextColor(1, 1, 1)
     hideWelcome.label = hideWelcomeLabel
 
+    function panel:RefreshLocale()
+        if title then title:SetText(Addon:T("firstRunTitle")) end
+        intro:SetText(Addon:T("firstRunIntro"))
+        guide:SetText("|T" .. ASSET_ROOT .. "CMLogo.png:18:18|t  " .. Addon:T("firstRunGuide"))
+        done:SetText(Addon:T("firstRunDone"))
+        settings:SetText(Addon:T("firstRunSettings"))
+        hideWelcomeLabel:SetText(Addon:T("hideWelcomeOnLogin"))
+        Addon:ApplyLocaleTree(self)
+        Addon:FitLocaleLabel(intro, WINDOW_WIDTH-70)
+        Addon:FitLocaleLabel(guide, WINDOW_WIDTH-70)
+        Addon:FitLocaleLabel(hideWelcomeLabel, 230)
+    end
+    panel:RefreshLocale()
+
     panel:HookScript("OnShow", updateBackScrollRange)
 
     panel:HookScript("OnShow", function()
@@ -392,7 +406,12 @@ end
 function Addon:ShowWelcomeWindow(force)
     if not self.db or (self.db.hideWelcomeOnLogin and not force) then return end
     local panel = self:CreateWelcomeWindow()
+    panel:RefreshLocale()
     panel:SetScale(math.min(1, (UIParent:GetWidth() - 32) / WINDOW_WIDTH,
         (UIParent:GetHeight() - 32) / WINDOW_HEIGHT))
     panel:Show()
+end
+
+function Addon:RefreshWelcomeWindow()
+    if self.welcomeWindow then self.welcomeWindow:RefreshLocale() end
 end

@@ -11,12 +11,11 @@ local ENTRIES = {
 }
 
 local function text(zh, en)
-    return Addon.db and Addon.db.language == "enUS" and en or zh
+    return Addon:L(zh, en)
 end
 
 local function chineseClient()
-    local locale = GetLocale and GetLocale() or "enUS"
-    return locale == "zhCN" or locale == "zhTW"
+    return Addon:IsChineseLanguage()
 end
 
 local function description(entry)
@@ -147,7 +146,7 @@ function Addon:CreateOptionsFooter(window)
     local function updateCPU()
         sampleCPU(cpu.sample)
         local value = cpu.sample.percent
-        cpu.label:SetText("CPU Usage : |cffffffff" .. (value and string.format("%.2f%%", value) or "--%") .. "|r")
+        cpu.label:SetText(Addon:L("CPU使用率", "CPU Usage") .. " : |cffffffff" .. (value and string.format("%.2f%%", value) or "--%") .. "|r")
     end
     cpu:SetScript("OnShow", function() resetSample(cpu.sample); updateCPU() end)
     cpu:SetScript("OnHide", function() resetSample(cpu.sample); GameTooltip:Hide() end)
@@ -160,7 +159,7 @@ function Addon:CreateOptionsFooter(window)
     end)
     cpu:SetScript("OnEnter", function(owner)
         GameTooltip:SetOwner(owner, "ANCHOR_TOPLEFT")
-        GameTooltip:AddLine("CPU Usage", 1, 0.82, 0)
+        GameTooltip:AddLine(Addon:L("CPU使用率", "CPU Usage"), 1, 0.82, 0)
         GameTooltip:AddLine(text("卡牌大师的 CPU 使用率，每秒更新。", "Card Master's CPU usage, updated once per second."), 1, 1, 1, true)
         GameTooltip:AddLine(text("按插件执行时间占单线程时间的比例计算。", "Addon execution time as a percentage of one CPU thread."), 0.8, 0.8, 0.8, true)
         if cpu.sample.reason == "disabled" then
@@ -184,7 +183,7 @@ function Addon:CreateOptionsFooter(window)
     bar.label = bar:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     bar.label:SetJustifyV("MIDDLE")
     bar.label:SetPoint("RIGHT", bar, "LEFT", -12, 0)
-    bar.label:SetText(chineseClient() and "在这里找到作者" or "Community & Support")
+    bar.label:SetText(text("在这里找到作者", "Community & Support"))
     bar.label:SetTextColor(0.7, 0.75, 0.8)
 
     local popup = panel(bar)
@@ -335,7 +334,7 @@ end
 function Addon:RefreshOptionsFooter()
     local bar = self.options and self.options.footerLinks
     if not bar then return end
-    bar.label:SetText(chineseClient() and "在这里找到作者" or "Community & Support")
+    bar.label:SetText(text("在这里找到作者", "Community & Support"))
     bar.popup:Hide()
     local chinese = chineseClient()
     local visible = 0
@@ -349,5 +348,9 @@ function Addon:RefreshOptionsFooter()
         end
     end
     bar:SetWidth(math.max(32, (visible - 1) * 42 + 32))
+    local width=math.max(90,self.options:GetWidth()-bar:GetWidth()-310)
+    bar.label:SetWidth(width)
+    bar.label:SetJustifyH("RIGHT")
+    self:FitLocaleLabel(bar.label,width)
     GameTooltip:Hide()
 end

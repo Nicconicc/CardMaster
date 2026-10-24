@@ -10,6 +10,7 @@ function Addon:GetCollectionPreview()
     frame.art:SetSize(512, 512)
     frame.art:SetPoint("TOP")
     frame.label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    self:ApplyLocaleFont(frame.label)
     frame.label:SetPoint("TOP", frame.art, "BOTTOM", 0, -2)
     frame.effects = {}
     if frame.CreateMaskTexture and frame.art.AddMaskTexture and frame.art.SetVertexOffset then
@@ -67,6 +68,8 @@ function Addon:ShowCollectionPreview(entry, owner, pinned)
     frame.showingArt, frame.previewOwner = available, owner
     frame.art:SetTexture(available and entry.sourceTexture or self:GetUnknownCardTexture(entry.styleID))
     frame.label:SetText(available and "" or self:CollectionText("已收藏，贴图未安装或仍在检查", "Collected; artwork missing or still being checked"))
+    self:ApplyLocaleFont(frame.label)
+    self:FitLocaleLabel(frame.label,500)
     frame.close:SetShown(pinned and true or false)
     frame:Show()
     if not available then return end

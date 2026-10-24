@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "1.1.183"
+Addon.buildVersion = "1.1.184"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -44,6 +44,10 @@ local function setButtonStyle(button, active)
         -- so equal texture dimensions still produce a visibly shorter frame.
         -- Use the same shell in both states; text and hover indicate selection.
         button.label:SetTextColor(1, active and 1 or 0.82, active and 1 or 0)
+    end
+    if button.label then
+        Addon:ApplyLocaleFont(button.label)
+        Addon:FitLocaleLabel(button.label,button:GetWidth()-(button.kind=="tab" and 12 or 34))
     end
 end
 
@@ -265,7 +269,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/24 0316")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/25 0022")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -404,6 +408,8 @@ function Addon:CreateCheckbox(parent, text, checked, onChanged, y)
     check.label:SetPoint("LEFT", check, "RIGHT", legacy and 5 or 0, 0)
     check.label:SetText(text)
     check.label:SetTextColor(1, 1, 1)
+    local available = parent:GetWidth() - 62
+    if available > 0 then self:FitLocaleLabel(check.label,available) end
     check:SetScript("OnClick", function(self) onChanged(self:GetChecked() and true or false) end)
     return y - (legacy and 38 or 34)
 end
@@ -417,6 +423,7 @@ function Addon:CreateSlider(parent, labelText, minValue, maxValue, step, value, 
     label:SetPoint("TOPLEFT", 0, -3)
     label:SetText(labelText)
     label:SetTextColor(1, 1, 1)
+    self:FitLocaleLabel(label,240)
     local slider = self:CreateSpinBox(row, 230, minValue, maxValue, step)
     slider:SetPoint("TOPLEFT", 4, -20)
     slider.suffix = suffix
@@ -460,7 +467,7 @@ function Addon:BuildPinnedModuleHeader(parent, moduleTitle, enabled, onEnabled, 
     if not header then return -12 end
     self:ClearContainer(header)
     local y = -10
-    local enableText = self.db.language == "enUS" and "Enable module" or "启动模块"
+    local enableText = self:L("启动模块", "Enable module")
     y = self:CreateCheckbox(header, enableText, enabled, onEnabled, y)
     if extraCheckText then
         local extra = CreateFrame("CheckButton", nil, header, "UICheckButtonTemplate")
@@ -508,7 +515,7 @@ function Addon:BuildIntegratedModulePage(parent, moduleKey)
     local single = moduleKey == "singleSpell"
     local module = single and self.SingleSpell or self.CombatIn
     local db = self.legacyDB
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local enabled = self:IsIntegratedEnabled(moduleKey)
     local y = self:BuildPinnedModuleHeader(parent, self:T(moduleKey), enabled, function(value)
         self:SetIntegratedEnabled(moduleKey, value)
@@ -582,7 +589,7 @@ end
 function Addon:BuildAFKPage(parent)
     self:ClearContainer(parent)
     local config = self.db.modules.afk
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local y = self:BuildPinnedModuleHeader(parent, self:T("afk"), config.enabled, function(value)
         self.AFK.SetEnabled(value)
     end, text("测试效果", "Test effect"), function()
@@ -636,7 +643,7 @@ end
 function Addon:BuildBossPage(parent)
     self:ClearContainer(parent)
     local config = self.db.modules.boss
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local y = self:BuildPinnedModuleHeader(parent, self:T("boss"), config.enabled, function(value)
         self.Boss.SetEnabled(value)
         self:BuildBossPage(parent)
@@ -672,7 +679,7 @@ end
 function Addon:BuildLootPage(parent)
     self:ClearContainer(parent)
     local config = self.db.modules.loot
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local y = self:BuildPinnedModuleHeader(parent, self:T("loot"), config.enabled, function(value)
         self.Loot.SetEnabled(value)
         self:BuildLootPage(parent)
@@ -708,7 +715,7 @@ end
 function Addon:BuildLevelUpPage(parent)
     self:ClearContainer(parent)
     local config = self.db.modules.levelUp
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local y = self:BuildPinnedModuleHeader(parent, self:T("levelUp"), config.enabled, function(value)
         self.LevelUp.SetEnabled(value)
         self:BuildLevelUpPage(parent)
@@ -744,7 +751,7 @@ end
 function Addon:BuildCountdownPage(parent)
     self:ClearContainer(parent)
     local config = self.db.modules.countdown
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local y = self:BuildPinnedModuleHeader(parent, self:T("countdown"), config.enabled, function(value)
         self.Countdown.SetEnabled(value)
         self:BuildCountdownPage(parent)
@@ -899,7 +906,7 @@ end
 function Addon:BuildStyles()
     local body = self.options.body
     self:ClearContainer(body)
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
     local host = CreateFrame("Frame", nil, body)
     host:SetPoint("TOPLEFT", 0, 0)
     host:SetPoint("BOTTOMRIGHT", 0, 0)
@@ -1060,7 +1067,7 @@ end
 function Addon:BuildCollection()
     local body = self.options.body
     self:ClearContainer(body)
-    local function text(zh, en) return self.db.language == "enUS" and en or zh end
+    local function text(zh, en) return self:L(zh, en) end
 
     local host = CreateFrame("Frame", nil, body)
     host:SetPoint("TOPLEFT", 0, 0)
@@ -1170,7 +1177,7 @@ function Addon:BuildCollection()
     end
 
     local function cardDisplayName(entry)
-        if self.db.language ~= "enUS" then return entry.name end
+        if self:IsChineseLanguage() then return entry.name end
         local displayNames = self.Spells and self.Spells.CardDisplayEnglish
         return (displayNames and displayNames[selectedClass] and displayNames[selectedClass][entry.name]) or entry.name
     end
@@ -1593,7 +1600,7 @@ function Addon:ShowConfigStringDialog(mode)
     dialog.title:SetText(self:T(mode == "export" and "exportConfig" or "importConfig"))
     dialog.hint:SetText(self:T(mode == "export" and "exportHint" or "importHint"))
     dialog.action:SetText(self:T(mode == "export" and "selectAll" or "importApply"))
-    dialog.cancel:SetText(CANCEL or (self.db.language == "enUS" and "Cancel" or "取消"))
+    dialog.cancel:SetText(CANCEL or (self:L("取消", "Cancel")))
     dialog.status:SetText("")
     if mode == "export" then
         local value = self:ExportConfigString()
@@ -1617,10 +1624,13 @@ function Addon:BuildMisc()
     content:SetSize(760, 500)
     local y = 0
     y = self:CreateSectionTitle(content, self:T("system"), y)
-    local selectedLanguage = self.db.language == "zhCN" and 1 or 2
-    y = self:CreateDropdown(content, self:T("language"), { self:T("chinese"), self:T("english") }, selectedLanguage, function(value)
-        Addon.db.language = value == 1 and "zhCN" or "enUS"
-        Addon:RefreshOptions()
+    local selectedLanguage, labels = 1, {}
+    for index, option in ipairs(self.languageOptions) do
+        labels[index] = option.label
+        if option.code == self:EffectiveLanguage() then selectedLanguage = index end
+    end
+    y = self:CreateDropdown(content, self:T("language"), labels, selectedLanguage, function(value)
+        Addon:SetLanguage(Addon.languageOptions[value].code)
     end, y)
     y = self:CreateCheckbox(content, self:T("showMinimap"), self.db.showMinimapIcon, function(value)
         Addon.db.showMinimapIcon = value
@@ -1672,6 +1682,7 @@ function Addon:SelectMainTab(tabKey)
     -- has one 60% panel. Never stack an extra dark fill behind either.
     self.options.body:SetBackdropColor(0.12, 0.12, 0.13, tabKey == "misc" and 0.6 or 0)
     for key, button in pairs(self.options.tabs) do
+        button.label:SetText(self:T(key))
         button.active = key == tabKey
         setButtonStyle(button, button.active)
     end
@@ -1684,11 +1695,12 @@ function Addon:SelectMainTab(tabKey)
     else
         self:BuildMisc()
     end
+    self:ApplyLocaleTree(self.options)
 end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/24 0316")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/10/25 0022")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))

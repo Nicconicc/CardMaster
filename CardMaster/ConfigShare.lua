@@ -149,6 +149,6 @@ function Addon:ImportConfigString(input)
         or type(config.integratedCards) ~= "table" then return nil end
     local clean, valid = filtered(config, getSchema())
     if not valid then return nil end
-    if clean.language ~= "zhCN" and clean.language ~= "enUS" then return nil end
+    if not Addon:IsLanguageSupported(clean.language) then return nil end
     return clean
 end
