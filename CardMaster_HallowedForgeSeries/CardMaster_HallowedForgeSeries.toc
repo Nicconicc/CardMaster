@@ -1,9 +1,10 @@
 ## Interface: 120100, 38002, 20506, 11509, 50504, 16001
 ## Title: CardMaster: I Hallowed Forge Series
+## IconTexture: Interface\AddOns\CardMaster\Textures\Assets\CMLogo.png
 ## Title-zhCN: 卡牌大师：I 圣铸系列
 ## Title-zhTW: 卡牌大師：I 聖鑄系列
 ## Notes: Hallowed Forge Series card artwork for CardMaster.
 ## Notes-zhCN: 卡牌大师的圣铸系列卡牌资源。
-## Version: 1.1.184
+## Version: 1.1.185
 
 Resources.lua
