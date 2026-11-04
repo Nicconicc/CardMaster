@@ -251,6 +251,36 @@ local groupMembers = {
     [34799] = {"酸喉&恐鳞", 2, 2},
     [35144] = {"酸喉&恐鳞", 1, 2},
 }
+-- Extend the existing tables so animation, AFK and preview share the full set.
+for name, record in pairs(Addon.BossRegistry) do
+    local canonical = name == "穆鲁" and "熵魔" or name
+    textures[canonical] = ROOT .. "Textures\\Cardfront\\cardfront1\\Boss\\" .. name .. ".blp"
+    aliases[record.english] = canonical
+    aliases[name] = canonical
+    for _, id in ipairs(record.encounters) do encounterNames[id] = canonical end
+    -- Friendly keepers and vehicle phases are completed via encounter success.
+    if name ~= "穆鲁" and name ~= "米米尔隆" and name ~= "霍迪尔" and name ~= "弗蕾亚" and name ~= "托里姆" and name ~= "踏梦者瓦莉瑟瑞娅" then
+        for _, id in ipairs(record.npcs) do npcNames[id] = canonical end
+    end
+end
+aliases["The Assembly of Iron"] = "断钢者"
+aliases["Assembly of Iron"] = "断钢者"
+aliases["钢铁议会"] = "断钢者"
+aliases["Reliquary of the Lost"] = "迷失者的圣骨匣"
+aliases["Gunship Battle"] = "冰冠炮舰战斗"
+aliases["Romulo & Julianne"] = "罗密欧与朱丽叶"
+aliases["The Wizard of Oz"] = "绿野仙踪"
+npcNames[16179], npcNames[16180], npcNames[16181] = "潜伏者希亚其斯", "滑翔者沙德基斯", "蹂躏者洛卡德"
+npcNames[15589] = nil
+npcNames[22856] = nil -- The shell is not the final essence.
+npcNames[23420] = "迷失者的圣骨匣"
+npcNames[18168] = "绿野仙踪"
+for _, name in ipairs({"安其拉三宝", "双子皇帝", "伊利达雷议会", "断钢者"}) do
+    local ids = Addon.BossRegistry[name].npcs
+    for slot, id in ipairs(ids) do groupMembers[id] = {name, slot, #ids} end
+end
+groupMembers[17533], groupMembers[17534] = {"罗密欧与朱丽叶", 1, 2}, {"罗密欧与朱丽叶", 2, 2}
+local worldBossIDs = {[14887]=true,[14888]=true,[14889]=true,[14890]=true}
 local championIDs = { [34458] = true, [34451] = true, [34459] = true, [34448] = true, [34449] = true, [34445] = true, [34456] = true, [34447] = true, [34441] = true, [34454] = true, [34444] = true, [34455] = true, [34450] = true, [34453] = true, [34461] = true, [34460] = true, [34469] = true, [34467] = true, [34468] = true, [34471] = true, [34465] = true, [34466] = true, [34473] = true, [34472] = true, [34470] = true, [34463] = true, [34474] = true, [34475] = true }
 local queue, recent, deadMembers = {}, {}, {}
 local championCombat = false
@@ -476,7 +506,7 @@ function Boss.Stop()
 end
 
 local function Resolve(name, encounterID)
-    return encounterNames[encounterID] or aliases[name] or (textures[name] and name)
+    return aliases[name] or (textures[name] and name) or encounterNames[encounterID]
 end
 
 local function RandomPreviewBossName()
@@ -522,7 +552,11 @@ events:SetScript("OnEvent", function(_, event, ...)
         return
     end
     local inInstance, instanceType = IsInInstance()
-    if not inInstance or (instanceType ~= "raid" and instanceType ~= "party") then return end
+    if not inInstance or (instanceType ~= "raid" and instanceType ~= "party") then
+        if event ~= "COMBAT_LOG_EVENT_UNFILTERED" then return end
+        local _, subevent, _, _, _, _, _, guid = CombatLogGetCurrentEventInfo()
+        if subevent ~= "UNIT_DIED" or not worldBossIDs[NpcID(guid)] then return end
+    end
     if event == "BOSS_KILL" then
         local id, name = ...
         Boss.Play(Resolve(name, id))

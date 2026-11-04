@@ -7,6 +7,14 @@ local CARD_ROOT = ROOT .. "Textures\\Cardfront\\cardfront1\\Loot\\"
 
 Addon.LootTextures = {
     cards = {
+        ["克拉西斯水晶"] = CARD_ROOT .. "克拉西斯水晶.blp",
+        ["发条裂片"] = CARD_ROOT .. "发条裂片.blp",
+        ["掌炉者烈火"] = CARD_ROOT .. "掌炉者烈火.blp",
+        ["星辰之缕"] = CARD_ROOT .. "星辰之缕.blp",
+        ["瓦兰奈尔的碎片"] = CARD_ROOT .. "瓦兰奈尔的碎片.blp",
+        ["钢铁碎片"] = CARD_ROOT .. "钢铁碎片.blp",
+        ["雷神雷霆"] = CARD_ROOT .. "雷神雷霆.blp",
+
         ["阿曼尼雷霆"] = CARD_ROOT .. "阿曼尼雷霆.blp", ["阿曼尼烈火"] = CARD_ROOT .. "阿曼尼烈火.blp",
         ["埃提耶什的碎片"] = CARD_ROOT .. "埃提耶什的碎片.blp", ["艾瑞达之心"] = CARD_ROOT .. "艾瑞达之心.blp",
         ["奥的灰烬"] = CARD_ROOT .. "奥的灰烬.blp", ["不死鸟之焰"] = CARD_ROOT .. "不死鸟之焰.blp",
