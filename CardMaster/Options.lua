@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "187"
+Addon.buildVersion = "188"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -269,7 +269,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/04 1435")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/07 0732")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -1103,6 +1103,18 @@ function Addon:BuildCollection()
     end)
     collectToggle:SetScript("OnLeave", GameTooltip_Hide)
 
+    local soundToggle = CreateFrame("CheckButton", nil, cardsPanel, "UICheckButtonTemplate")
+    soundToggle:SetSize(24, 24)
+    soundToggle:SetPoint("LEFT", cardsPanel, "TOP", 4, -20)
+    soundToggle:SetChecked(self.db.collectionSoundEnabled ~= false)
+    local soundLabel = soundToggle:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    self:SetControlFont(soundLabel)
+    soundLabel:SetPoint("LEFT", soundToggle, "RIGHT", 2, 0)
+    soundLabel:SetText(text("启动收藏音效", "Enable collection sound"))
+    soundToggle:SetScript("OnClick", function(owner)
+        self.db.collectionSoundEnabled = owner:GetChecked() and true or false
+    end)
+
     local frontScroll = CreateFrame("ScrollFrame", nil, frontPanel, "UIPanelScrollFrameTemplate")
     frontScroll:SetPoint("TOPLEFT", 10, -42)
     frontScroll:SetPoint("BOTTOMRIGHT", -30, 10)
@@ -1423,6 +1435,8 @@ function Addon:BuildCollection()
         local cardsWidth = contentWidth - frontWidth
         frontPanel:SetWidth(frontWidth)
         cardsPanel:SetWidth(cardsWidth)
+        self:FitLocaleLabel(collectLabel, cardsWidth / 2 - 42)
+        self:FitLocaleLabel(soundLabel, cardsWidth / 2 - 42)
         local frontAvailable = math.max(220, frontPanel:GetWidth() - 40)
         frontContent:SetWidth(frontAvailable)
         local frontOffset = 0
@@ -1700,7 +1714,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/04 1435")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/07 0732")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))

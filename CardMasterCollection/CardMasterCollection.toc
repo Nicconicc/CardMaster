@@ -2,7 +2,7 @@
 ## Title: CardMaster: Collection Storage
 ## IconTexture: Interface\AddOns\CardMaster\Textures\Assets\CMLogo.png
 ## Notes: Account-wide collection storage. Bundled with CardMaster.
-## Version: 187
+## Version: 188
 ## SavedVariables: CardMasterCollectionDB
 
 Storage.lua

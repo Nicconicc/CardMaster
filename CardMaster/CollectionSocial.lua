@@ -65,7 +65,8 @@ function Addon:FlushCollectionNotices()
     if #notices == 0 then return end
     self.collectionNotices = {}
     local now = GetTime()
-    if PlaySoundFile and (not self.collectionNoticeSoundAt or now - self.collectionNoticeSoundAt >= 0.75) then
+    if self.db.collectionSoundEnabled ~= false and PlaySoundFile
+        and (not self.collectionNoticeSoundAt or now - self.collectionNoticeSoundAt >= 0.75) then
         self.collectionNoticeSoundAt = now
         local media = LibStub and LibStub("LibSharedMedia-3.0", true)
         local sound = media and media:Fetch("sound", "Xylophone", true)

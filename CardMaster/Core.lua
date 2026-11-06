@@ -1,7 +1,7 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "187"
+Addon.version = "188"
 -- Movers are constructed at file load, before UIStyles.lua in the TOC.
 -- Keep this dependency-free size resolver available from the first file.
 function Addon:ClientInterfaceFontSize(nominal)
@@ -23,6 +23,7 @@ local defaults = {
     cardStyles = { front = 1, back = 1 },
     cardCollection = {},
     collectionBroadcast = true,
+    collectionSoundEnabled = true,
     collectionSettings = {},
     modules = {
         singleSpell = {

@@ -14,6 +14,7 @@ local function getSchema()
         showMinimapIcon = Addon.defaults.showMinimapIcon,
         hideWelcomeOnLogin = Addon.defaults.hideWelcomeOnLogin,
         collectionBroadcast = Addon.defaults.collectionBroadcast,
+        collectionSoundEnabled = Addon.defaults.collectionSoundEnabled,
         collectionSettings = Addon:GetCollectionSettingsSchema(),
         cardStyles = Addon.defaults.cardStyles,
         modules = Addon.defaults.modules,
