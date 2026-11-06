@@ -255,6 +255,7 @@ end
 
 local events, recent = CreateFrame("Frame"), {}
 local function HandleMessage(message)
+    if issecretvalue and issecretvalue(message) then return end
     if type(message) ~= "string" or not IsRaidInstance() then return end
     for itemName in pairs(assets.cards) do
         if message:find(itemName, 1, true) then

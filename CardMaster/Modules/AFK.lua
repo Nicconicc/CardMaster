@@ -359,9 +359,16 @@ function AFK.Stop()
     RestoreUI()
 end
 
+local function IsPlayerAFK()
+    local afk = UnitIsAFK("player")
+    -- Retail can hide this value while chat restrictions are active.
+    if issecretvalue and issecretvalue(afk) then return false end
+    return afk == true
+end
+
 local function OnUpdate(self, elapsed)
     local config = Settings()
-    if not config or not config.enabled or (not testMode and not UnitIsAFK("player")) then
+    if not config or not config.enabled or (not testMode and not IsPlayerAFK()) then
         AFK.Stop()
         return
     end
@@ -434,7 +441,7 @@ end
 
 function AFK.RefreshState()
     local config = Settings()
-    if not config or not config.enabled or not UnitIsAFK("player") or #(Addon.AFKTextures or {}) == 0 then
+    if not config or not config.enabled or not IsPlayerAFK() or #(Addon.AFKTextures or {}) == 0 then
         AFK.Stop()
         return
     end
@@ -473,6 +480,10 @@ function AFK.SetEnabled(enabled)
     events:UnregisterAllEvents()
     if enabled then
         events:RegisterEvent("PLAYER_FLAGS_CHANGED")
+        if C_EventUtils and C_EventUtils.IsEventValid
+            and C_EventUtils.IsEventValid("ADDON_RESTRICTION_STATE_CHANGED") then
+            events:RegisterEvent("ADDON_RESTRICTION_STATE_CHANGED")
+        end
         events:RegisterEvent("PLAYER_ENTERING_WORLD")
         events:RegisterEvent("DISPLAY_SIZE_CHANGED")
         events:RegisterEvent("UI_SCALE_CHANGED")
@@ -488,6 +499,15 @@ events:SetScript("OnEvent", function(_, event, unit)
     if event == "PLAYER_LEAVING_WORLD" then AFK.Stop(); return end
     if event == "PLAYER_STARTED_MOVING" and testMode then AFK.Stop(); return end
     if event == "PLAYER_FLAGS_CHANGED" and unit ~= "player" then return end
+    if event == "ADDON_RESTRICTION_STATE_CHANGED" then
+        -- The new restriction state takes effect after event dispatch.
+        C_Timer.After(0, function()
+            if not testMode and events:IsEventRegistered("ADDON_RESTRICTION_STATE_CHANGED") then
+                AFK.RefreshState()
+            end
+        end)
+        return
+    end
     AFK.RefreshState()
 end)
 
