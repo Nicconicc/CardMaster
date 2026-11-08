@@ -126,7 +126,10 @@ function Addon:CollectionReceive(prefix, message, distribution, sender)
 end
 
 function Addon:CollectionTooltip(tooltip, unit)
-    if not unit or not UnitIsPlayer(unit) then return end
+    -- A unit tooltip can expose a protected token in restricted instances.
+    if not safe(unit) or type(unit) ~= "string" then return end
+    local isPlayer = UnitIsPlayer(unit)
+    if not safe(isPlayer) or not isPlayer then return end
     local name, realm = UnitFullName(unit)
     if not safe(name) or not safe(realm) or not name then return end
     realm = realm and realm ~= "" and realm or GetNormalizedRealmName()
