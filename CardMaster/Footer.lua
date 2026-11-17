@@ -42,60 +42,7 @@ local function call(fn, ...)
     if ok then return result end
 end
 
-local function number(value)
-    if issecretvalue and issecretvalue(value) then return end
-    if type(value) ~= "number" or value ~= value or value < 0 or value == math.huge then return end
-    return value
-end
-
-local function resetSample(sample)
-    sample.total, sample.time, sample.percent, sample.reason = nil, nil, nil, nil
-    sample.elapsed = 0
-end
-
-local function sampleCPU(sample)
-    local profiler = C_AddOnProfiler
-    local metric = Enum and Enum.AddOnProfilerMetric and Enum.AddOnProfilerMetric.RecentAverageTime
-    if profiler and type(profiler.GetAddOnMetric) == "function" and metric ~= nil
-        and (type(profiler.IsEnabled) ~= "function" or call(profiler.IsEnabled) == true) then
-        local ms = number(call(profiler.GetAddOnMetric, Addon.name, metric))
-        local fps = number(call(GetFramerate))
-        if ms and fps and fps > 0 then
-            sample.total, sample.time, sample.reason = nil, nil, "modern"
-            sample.percent = math.max(0, math.min(100, ms * fps / 10))
-            return
-        end
-    end
-    local enabled = call(GetCVar or (C_CVar and C_CVar.GetCVar), "scriptProfile")
-    if enabled ~= "1" and enabled ~= 1 and enabled ~= true then
-        resetSample(sample)
-        sample.reason = "disabled"
-        return
-    end
-    local update = UpdateAddOnCPUUsage or (C_AddOns and C_AddOns.UpdateAddOnCPUUsage)
-    local get = GetAddOnCPUUsage or (C_AddOns and C_AddOns.GetAddOnCPUUsage)
-    if type(update) ~= "function" or type(get) ~= "function" then
-        resetSample(sample)
-        sample.reason = "unavailable"
-        return
-    end
-    local ok = pcall(update)
-    local total = ok and number(call(get, Addon.name))
-    local now = number(call(GetTime))
-    if not total or not now then
-        resetSample(sample)
-        sample.reason = "unavailable"
-        return
-    end
-    local elapsed = sample.time and now - sample.time
-    local used = sample.total and total - sample.total
-    sample.total, sample.time, sample.reason = total, now, "legacy"
-    if elapsed and elapsed > 0 and used and used >= 0 then
-        sample.percent = math.max(0, math.min(100, used / (elapsed * 10)))
-    else
-        sample.percent = nil
-    end
-end
+local CPU = Addon.CPUUsage
 
 local function panel(parent)
     local frame = CreateFrame("Frame", nil, parent, "BackdropTemplate")
@@ -142,37 +89,42 @@ function Addon:CreateOptionsFooter(window)
     cpu.label:SetPoint("LEFT", 23, 0)
     cpu.label:SetJustifyV("MIDDLE")
     cpu.label:SetTextColor(0.7, 0.75, 0.8)
-    cpu.sample = { elapsed = 0 }
+    cpu.sample = {}
     local function updateCPU()
-        sampleCPU(cpu.sample)
+        CPU.Sample(cpu.sample)
         local value = cpu.sample.percent
-        cpu.label:SetText(Addon:L("CPU使用率", "CPU Usage") .. " : |cffffffff" .. (value and string.format("%.2f%%", value) or "--%") .. "|r")
+        local display = value and string.format("%.2f%%", value) or "--%"
+        if value and cpu.sample.reason == "estimate" then display = "≈" .. display end
+        cpu.label:SetText(text("CPU使用率", "CPU Usage") .. " : |cffffffff" .. display .. "|r")
     end
-    cpu:SetScript("OnShow", function() resetSample(cpu.sample); updateCPU() end)
-    cpu:SetScript("OnHide", function() resetSample(cpu.sample); GameTooltip:Hide() end)
+    CPU.Reset(cpu.sample)
+    cpu.label:SetText(text("CPU使用率", "CPU Usage") .. " : |cffffffff--%|r")
+    cpu:SetScript("OnShow", function() CPU.Reset(cpu.sample); updateCPU() end)
+    cpu:SetScript("OnHide", function()
+        CPU.Reset(cpu.sample)
+        if GameTooltip:GetOwner() == cpu then GameTooltip:Hide() end
+    end)
     cpu:SetScript("OnUpdate", function(_, elapsed)
         cpu.sample.elapsed = cpu.sample.elapsed + elapsed
-        if cpu.sample.elapsed >= 1 then
-            cpu.sample.elapsed = 0
-            updateCPU()
-        end
+        if cpu.sample.elapsed >= 1 then updateCPU() end
     end)
     cpu:SetScript("OnEnter", function(owner)
         GameTooltip:SetOwner(owner, "ANCHOR_TOPLEFT")
         GameTooltip:AddLine(Addon:L("CPU使用率", "CPU Usage"), 1, 0.82, 0)
         GameTooltip:AddLine(text("卡牌大师的 CPU 使用率，每秒更新。", "Card Master's CPU usage, updated once per second."), 1, 1, 1, true)
         GameTooltip:AddLine(text("按插件执行时间占单线程时间的比例计算。", "Addon execution time as a percentage of one CPU thread."), 0.8, 0.8, 0.8, true)
-        if cpu.sample.reason == "disabled" then
-            GameTooltip:AddLine(text("CPU 统计未开启。输入 /console scriptProfile 1 后 /reload。", "CPU profiling is disabled. Use /console scriptProfile 1, then /reload."), 0.8, 0.8, 0.8, true)
+        if cpu.sample.reason == "estimate" then
+            GameTooltip:AddLine(text("仅在窗口打开时估算卡牌大师主要事件和动画的耗时。", "Estimates the time spent on CardMaster’s main events and animations while this window is open."), 0.8, 0.8, 0.8, true)
         elseif cpu.sample.reason == "unavailable" then
             GameTooltip:AddLine(text("当前客户端未提供可用的 CPU 统计数据。", "CPU profiling data is unavailable on this client."), 0.8, 0.8, 0.8, true)
-        elseif cpu.sample.percent == nil then
+        end
+        if cpu.sample.reason ~= "unavailable" and cpu.sample.percent == nil then
             GameTooltip:AddLine(text("正在采集 CPU 数据…", "Collecting CPU data…"), 0.8, 0.8, 0.8, true)
         end
         GameTooltip:Show()
     end)
     cpu:SetScript("OnLeave", function() GameTooltip:Hide() end)
-    updateCPU()
+    if cpu:IsVisible() then updateCPU() end
     window.cpuFooter = cpu
 
     local bar = CreateFrame("Frame", nil, window)

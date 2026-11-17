@@ -236,7 +236,7 @@ local function Render(time)
     title:SetAlpha(titleAlpha * TITLE_ALPHA)
 end
 
-local function OnUpdate(_, delta)
+local OnUpdate = Addon.CPUUsage.Measure(function(_, delta)
     local config = Config()
     if not config or not config.enabled then LevelUp.Stop(); return end
     elapsed = elapsed + delta * (config.speed or 1)
@@ -245,7 +245,7 @@ local function OnUpdate(_, delta)
         return
     end
     Render(elapsed)
-end
+end)
 
 function LevelUp.UpdateSettings()
     local config = Config()

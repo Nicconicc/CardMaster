@@ -170,13 +170,13 @@ local function Render(time)
     if time > DISPLAY_DURATION then titleAlpha = 1 - Clamp((time - DISPLAY_DURATION) / FADE_DURATION, 0, 1) end
     title:SetAlpha(titleAlpha * TITLE_ALPHA)
 end
-local function OnUpdate(_, delta)
+local OnUpdate = Addon.CPUUsage.Measure(function(_, delta)
     local config = Config()
     if not config or (not config.enabled and not previewing) then Loot.Stop(); return end
     elapsed = elapsed + delta * (config.speed or 1)
     if elapsed >= TOTAL_DURATION then Loot.Stop(); return end
     Render(elapsed)
-end
+end)
 
 function Loot.UpdateSettings()
     local config = Config()
@@ -270,7 +270,7 @@ local function HandleMessage(message)
         end
     end
 end
-events:SetScript("OnEvent", function(_, _, message) HandleMessage(message) end)
+events:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, _, message) HandleMessage(message) end))
 function Loot.SetEnabled(enabled)
     local config = Config()
     if not config then return end

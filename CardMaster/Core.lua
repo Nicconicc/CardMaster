@@ -1,7 +1,7 @@
 local ADDON_NAME, Addon = ...
 
 Addon.name = ADDON_NAME
-Addon.version = "190"
+Addon.version = "192"
 -- Movers are constructed at file load, before UIStyles.lua in the TOC.
 -- Keep this dependency-free size resolver available from the first file.
 function Addon:ClientInterfaceFontSize(nominal)
@@ -473,7 +473,7 @@ function Addon:OnEvent(event, ...)
     end
 end
 
-Addon.eventFrame:SetScript("OnEvent", function(_, event, ...)
+Addon.eventFrame:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, event, ...)
     Addon:OnEvent(event, ...)
-end)
+end))
 Addon.eventFrame:RegisterEvent("ADDON_LOADED")

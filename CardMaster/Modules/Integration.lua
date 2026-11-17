@@ -4,6 +4,8 @@ Addon.IntegratedDefaults = {}
 
 -- 1. 拆分独立页面的默认配置数据
 Addon.IntegratedDefaults.DEFAULT_SKILL = {
+    ssNormalCombat = true,
+    ssBossCombat = false,
     scale = 0.7,
     mainDuration = 0.5,
     slideX = -150,

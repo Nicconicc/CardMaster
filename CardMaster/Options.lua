@@ -1,5 +1,5 @@
 local _, Addon = ...
-Addon.buildVersion = "190"
+Addon.buildVersion = "192"
 
 local MODULE_ORDER = { "singleSpell", "inCombat", "afk", "boss", "loot", "levelUp", "countdown" }
 local MODULE_NAV_COLORS = {
@@ -269,7 +269,7 @@ function Addon:CreateOptions()
         title = panel:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("TOP", 0, -5)
     end
-    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/08 1027")
+    title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/17 1458")
     title:SetTextColor(1, 0.82, 0)
     panel.title = title
 
@@ -324,6 +324,7 @@ function Addon:CreateOptions()
     panel.recycleBin = CreateFrame("Frame", nil, panel)
     panel.recycleBin:Hide()
     self:CreateOptionsFooter(panel)
+    self:AttachReleaseNotes(panel)
 
     -- PortraitFrameTemplate can be shown again while the UI is being rebuilt
     -- by /reload.  Build the page only for an explicit settings open, after
@@ -565,6 +566,9 @@ function Addon:BuildIntegratedModulePage(parent, moduleKey)
             slider("randomOffsetY", "随机Y偏移", "Random Y offset", 0, 500, 10)
             slider("randomRotation", "随机旋转", "Random rotation", 0, 180, 5, "°")
         end
+        y = self:CreateSectionTitle(parent, self:T("trigger"), y)
+        y = self:CreateCheckbox(parent, text("进入普通战斗时加载", "Play on normal combat"), db.ssNormalCombat, function(value) db.ssNormalCombat = value end, y)
+        y = self:CreateCheckbox(parent, text("进入首领战斗时加载", "Play on boss combat"), db.ssBossCombat, function(value) db.ssBossCombat = value end, y)
     else
         slider("ciScale", "缩放", "Scale", 0.5, 1, 0.1)
         slider("ciSpeed", "动画速度（60 为原速）", "Animation speed (60 = normal)", 15, 120, 5)
@@ -1714,7 +1718,7 @@ end
 
 function Addon:RefreshOptions()
     if not self.options then return end
-    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/08 1027")
+    self.options.title:SetText(self:T("addonName") .. " - V" .. self.buildVersion .. " 2026/11/17 1458")
     self:RefreshOptionsFooter()
     self.options.tabs.gameplay.label:SetText(self:T("gameplay"))
     self.options.tabs.styles.label:SetText(self:T("styles"))

@@ -295,15 +295,15 @@ function Addon:InitCollectionEvents()
         self.collectionEventSupport[event] = pcall(frame.RegisterEvent, frame, event)
     end
     if not self:IsRetail() then pcall(frame.RegisterEvent, frame, "COMBAT_LOG_EVENT_UNFILTERED") end
-    frame:SetScript("OnEvent", function(_, event, ...) Addon:CollectionEvent(event, ...) end)
+    frame:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, event, ...) Addon:CollectionEvent(event, ...) end))
     -- Refresh visible target metadata sparingly; do not scan textures here.
     local elapsed, identityElapsed = 0, 0
-    frame:SetScript("OnUpdate", function(_, delta)
+    frame:SetScript("OnUpdate", Addon.CPUUsage.Measure(function(_, delta)
         elapsed, identityElapsed = elapsed + delta, identityElapsed + delta
         if identityElapsed >= 10 then identityElapsed = 0; Addon:CheckCollectionIdentity() end
         if elapsed < 0.5 then return end
         elapsed = 0
         Addon:CollectionRememberUnit("target")
         for guid, info in pairs(units) do if GetTime() - info.at > 180 then units[guid] = nil end end
-    end)
+    end))
 end

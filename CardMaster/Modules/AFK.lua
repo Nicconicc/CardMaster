@@ -366,7 +366,7 @@ local function IsPlayerAFK()
     return afk == true
 end
 
-local function OnUpdate(self, elapsed)
+local OnUpdate = Addon.CPUUsage.Measure(function(self, elapsed)
     local config = Settings()
     if not config or not config.enabled or (not testMode and not IsPlayerAFK()) then
         AFK.Stop()
@@ -396,7 +396,7 @@ local function OnUpdate(self, elapsed)
         end
         UpdateCardShine(card)
     end
-end
+end)
 
 function AFK.UpdateSettings()
     local config = Settings()
@@ -495,7 +495,7 @@ function AFK.SetEnabled(enabled)
     end
 end
 
-events:SetScript("OnEvent", function(_, event, unit)
+events:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, event, unit)
     if event == "PLAYER_LEAVING_WORLD" then AFK.Stop(); return end
     if event == "PLAYER_STARTED_MOVING" and testMode then AFK.Stop(); return end
     if event == "PLAYER_FLAGS_CHANGED" and unit ~= "player" then return end
@@ -509,7 +509,7 @@ events:SetScript("OnEvent", function(_, event, unit)
         return
     end
     AFK.RefreshState()
-end)
+end))
 
 function Addon:InitAFKModule()
     self.AFK.UpdateSettings()

@@ -101,14 +101,14 @@ local function StopAnimation()
     if soundHandle then StopSound(soundHandle); soundHandle = nil end
 end
 
-local function OnUpdate(_, elapsed)
+local OnUpdate = Addon.CPUUsage.Measure(function(_, elapsed)
     animationTime = animationTime + elapsed * playbackRate
     if animationTime >= Animation.duration then
         StopAnimation()
     else
         Render(animationTime)
     end
-end
+end)
 
 local dragFrame = CreateFrame("Frame", "CardMasterCombatInDragFrame", UIParent)
 dragFrame:SetSize(Animation.width, Animation.height)
@@ -224,7 +224,7 @@ function CombatIn.IsDragging() return dragFrame:IsShown() end
 -- Keep the original normal-combat / boss-combat trigger conditions.
 local isBossCombat = false
 local eventHandler = CreateFrame("Frame")
-eventHandler:SetScript("OnEvent", function(_, event)
+eventHandler:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, event)
     if not Addon:IsIntegratedEnabled("inCombat") then return end
     if event == "ENCOUNTER_START" then
         isBossCombat = true
@@ -240,7 +240,7 @@ eventHandler:SetScript("OnEvent", function(_, event)
             CombatIn.Play()
         end
     end
-end)
+end))
 
 function CombatIn.SetEnabled(enabled)
     eventHandler:UnregisterAllEvents()

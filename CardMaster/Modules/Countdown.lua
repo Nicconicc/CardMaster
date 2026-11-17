@@ -43,7 +43,7 @@ local function GetAvailableCard()
     card.texture = card:CreateTexture(nil, "ARTWORK")
     card.texture:SetAllPoints(card)
     card:Hide()
-    card:SetScript("OnUpdate", function(self, elapsed)
+    card:SetScript("OnUpdate", Addon.CPUUsage.Measure(function(self, elapsed)
         if not self.animating then return end
         local config = Config()
         if not config then self.animating = false; self:Hide(); return end
@@ -88,7 +88,7 @@ local function GetAvailableCard()
         self:SetSize(RAW_SIZE * (config.scale or 0.7) * xScale, RAW_SIZE * (config.scale or 0.7) * yScale)
         self.texture:SetRotation(math.rad(rotation))
         self:SetAlpha(alpha)
-    end)
+    end))
     table.insert(cards, card)
     return card
 end
@@ -127,7 +127,7 @@ local function StopCountdown()
 end
 
 local ticker = CreateFrame("Frame")
-ticker:SetScript("OnUpdate", function(_, _)
+ticker:SetScript("OnUpdate", Addon.CPUUsage.Measure(function(_, _)
     if not activeCountdown then return end
     local remaining = math.ceil(countdownSeconds - (GetTime() - countdownStart))
     if remaining < 1 then
@@ -138,7 +138,7 @@ ticker:SetScript("OnUpdate", function(_, _)
         lastSecond = remaining
         Countdown.ShowSecond(remaining)
     end
-end)
+end))
 
 function Countdown.Start(seconds, preview)
     local config = Config()
@@ -249,13 +249,13 @@ function Countdown.ResetToDefault()
 end
 
 local events = CreateFrame("Frame")
-events:SetScript("OnEvent", function(_, event, _, seconds)
+events:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, event, _, seconds)
     if event == "START_PLAYER_COUNTDOWN" then
         Countdown.Start(seconds)
     elseif event == "CANCEL_PLAYER_COUNTDOWN" then
         StopCountdown()
     end
-end)
+end))
 
 function Countdown.SetEnabled(enabled)
     local config = Config()

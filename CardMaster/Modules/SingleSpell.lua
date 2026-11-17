@@ -51,7 +51,7 @@ local function SetCardTexture(f, tex)
     f.texture:SetTexCoord(0, 1, 0, 1)
 end
 
-local function OnCardUpdate(self, elapsed)
+local OnCardUpdate = Addon.CPUUsage.Measure(function(self, elapsed)
     if not self.isAnimating then return end
 
     self.animTime = self.animTime + elapsed
@@ -156,7 +156,7 @@ local function OnCardUpdate(self, elapsed)
     self:SetAlpha(alpha)
     self:SetSize(baseSize * xScale, baseSize * yScale)
     self.texture:SetRotation(math.rad(finalRotation))
-end
+end)
 
 local function CreateNewCardFrame()
     local f = CreateFrame("Frame", nil, UIParent)
@@ -409,9 +409,17 @@ function Addon.SingleSpell.SetEnabled(enabled)
     end
 end
 
-eventHandler:SetScript("OnEvent", function(self, event, ...)
+local function AllowsCombatTrigger()
+    local config = Addon.legacyDB
+    if Addon:IsBossCombat() then return config.ssBossCombat == true end
+    if InCombatLockdown() then return config.ssNormalCombat ~= false end
+    return true
+end
+
+eventHandler:SetScript("OnEvent", Addon.CPUUsage.Measure(function(self, event, ...)
     if not Addon:IsIntegratedEnabled("singleSpell") then return end
-    if event == "UNIT_SPELLCAST_SUCCEEDED" then
+    local allowed = AllowsCombatTrigger()
+    if event == "UNIT_SPELLCAST_SUCCEEDED" and allowed then
         local unit, _, spellID = ...
         if unit == "player" and spellID then
             local info = C_Spell and C_Spell.GetSpellInfo and C_Spell.GetSpellInfo(spellID)
@@ -422,9 +430,9 @@ eventHandler:SetScript("OnEvent", function(self, event, ...)
     elseif event == "UNIT_AURA" and not Addon:IsRetail() then
         local unit = ...
         if unit == "player" then
-            RefreshPlayerBuffs(true)
+            RefreshPlayerBuffs(allowed)
         end
-    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" then
+    elseif event == "COMBAT_LOG_EVENT_UNFILTERED" and allowed then
         local _, subevent, _, sourceGUID = CombatLogGetCurrentEventInfo()
         -- 仅玩家自己的“法术 / 施法成功”触发。SPELL_DAMAGE、SPELL_MISSED
         -- 会包含流血、毒药等持续效果的每一跳，绝不能用于发牌。
@@ -433,4 +441,4 @@ eventHandler:SetScript("OnEvent", function(self, event, ...)
             if spellName then Addon.SingleSpell.TriggerAnimation(spellName) end
         end
     end
-end)
+end))

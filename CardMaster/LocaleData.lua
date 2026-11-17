@@ -1966,3 +1966,20 @@ Addon.localeTables = {
         ["爱发电"]="愛發電",
     },
 }
+
+local estimateKey = "Estimates the time spent on CardMaster’s main events and animations while this window is open."
+local spanishEstimate = "Estima el tiempo de los eventos y las animaciones principales de CardMaster mientras esta ventana está abierta."
+local estimateTranslations = {
+    zhTW = "僅在視窗開啟時估算卡牌大師主要事件和動畫的耗時。",
+    deDE = "Schätzt bei geöffnetem Fenster die Dauer der wichtigsten Ereignisse und Animationen von CardMaster.",
+    frFR = "Estime le temps des principaux événements et animations de CardMaster tant que cette fenêtre est ouverte.",
+    esES = spanishEstimate,
+    esMX = spanishEstimate,
+    itIT = "Stima il tempo dei principali eventi e animazioni di CardMaster mentre questa finestra è aperta.",
+    ptBR = "Estima o tempo dos principais eventos e animações do CardMaster enquanto esta janela está aberta.",
+    ruRU = "Оценивает время обработки основных событий и анимаций CardMaster, пока это окно открыто.",
+    koKR = "이 창이 열려 있는 동안 카드마스터의 주요 이벤트와 애니메이션에 걸린 시간을 추정합니다.",
+}
+for language, translation in pairs(estimateTranslations) do
+    Addon.localeTables[language][estimateKey] = translation
+end

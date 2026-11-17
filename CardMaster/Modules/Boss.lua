@@ -486,11 +486,11 @@ local function StartNext()
     frame:Show()
 end
 
-local function OnUpdate(_, delta)
+local OnUpdate = Addon.CPUUsage.Measure(function(_, delta)
     if not Enabled() then Boss.Stop(); return end
     elapsed = elapsed + delta * (Config().speed or 1)
     if elapsed >= CARD_END then StartNext() else Render(elapsed) end
-end
+end)
 
 function Boss.Stop()
     queue, current, recent, deadMembers = {}, nil, {}, {}
@@ -541,7 +541,7 @@ local function NpcID(guid)
     if kind == "Creature" or kind == "Vehicle" then return tonumber(id) end
 end
 
-events:SetScript("OnEvent", function(_, event, ...)
+events:SetScript("OnEvent", Addon.CPUUsage.Measure(function(_, event, ...)
     if not Enabled() then return end
     if event == "PLAYER_LEAVING_WORLD" then Boss.Stop(); return end
     if event == "ENCOUNTER_START" then
@@ -588,7 +588,7 @@ events:SetScript("OnEvent", function(_, event, ...)
             Boss.Play(npcNames[id] or Resolve(destName))
         end
     end
-end)
+end))
 
 function Boss.SetEnabled(enabled)
     if Config() then Config().enabled = enabled and true or false end

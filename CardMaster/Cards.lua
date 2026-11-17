@@ -114,9 +114,9 @@ function Addon:CreateOneCard(moduleKey)
     frame.backBrand:SetTextColor(0.9, 0.64, 0.2)
 
     frame.moduleKey = moduleKey
-    frame:SetScript("OnUpdate", function(card, elapsed)
+    frame:SetScript("OnUpdate", Addon.CPUUsage.Measure(function(card, elapsed)
         Addon:UpdateCardAnimation(card, elapsed)
-    end)
+    end))
     self.cards[moduleKey] = frame
 end
 
