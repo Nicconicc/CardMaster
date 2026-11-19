@@ -200,7 +200,7 @@ function Addon:CreateOptionsFooter(window)
         local token = hideToken
         C_Timer.After(0.25, function()
             if token ~= hideToken or popup.pinned or not popup:IsShown() then return end
-            if MouseIsOver(popup) or (popup.owner and MouseIsOver(popup.owner)) then return end
+            if popup:IsMouseOver() or (popup.owner and popup.owner:IsMouseOver()) then return end
             popup:Hide()
         end)
     end
